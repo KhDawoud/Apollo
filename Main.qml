@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import "../"
 
 Window {
     id: window
@@ -244,5 +245,24 @@ Window {
                 }
             }
         }
+    }
+    StackLayout {
+        anchors.top: header.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        currentIndex: mainNavBar.currentIndex // This links the TabBar to the content
+
+        // Index 0: Home
+        Rectangle { color: "black"; Text { text: "Home Page"; color: "white"; anchors.centerIn: parent } }
+
+        // Index 1: Problems
+        Rectangle { color: "black"; Text { text: "Problems Page"; color: "white"; anchors.centerIn: parent } }
+
+        // Index 2: Leaderboard
+        LeaderBoard { }
+
+        // Index 3: MatchFinder
+        Rectangle { color: "black"; Text { text: "MatchFinder Page"; color: "white"; anchors.centerIn: parent } }
     }
 }
