@@ -12,9 +12,34 @@ Rectangle {
         anchors.horizontalCenterOffset: -10
         font.bold: true
         font.pointSize: 40
-        color: "#3F72AF"
+        color: "white"
 
     }
+    Item {
+            id: starfield
+            anchors.fill: parent
+
+            Repeater {
+                model: 100 // Number of stars
+                Rectangle {
+                    // Random position and size
+                    x: Math.random() * starfield.width
+                    y: Math.random() * starfield.height
+                    width: Math.random() * 3 + 1
+                    height: width
+                    radius: width / 2
+                    color: "#D7D7D7"
+
+                    // Twinkling effect
+                    opacity: Math.random()
+                    NumberAnimation on opacity {
+                        from: 0.1; to: 2.0; duration: Math.random() * 5000 + 1000
+                        loops: Animation.Infinite; running: true
+                    }
+                }
+        }
+    }
+
     Rectangle{
         id: listbackground
         anchors.horizontalCenter: parent.horizontalCenter
@@ -44,8 +69,28 @@ Rectangle {
                     border.color: "#DBE2EF"
                 }
                 contentItem: Text {
-                    text: (index + 1) + "    Player " + (index + 1)
-                    color: "white"
+                    text:
+                        if(index+1==1){
+                            (index + 1) + "    Player " + (index + 1)
+                        }else if(index+1==2){
+                            (index + 1) + "    Player " + (index + 1)
+                        }else if(index+1==3){
+                            (index + 1) + "    Player " + (index + 1)
+                        }else{
+                            (index + 1) + "    Player " + (index + 1)
+                        }
+                    color:{
+                        if(index+1==1){
+                            color: "#C9B037"
+                        }else if(index+1==2){
+                            color: "#D7D7D7"
+                        }else if(index+1==3){
+                            color: "#CE8946"
+                        }else{
+                            color: "black"
+                        }
+                    }
+
                     font.pointSize: 14
                     font.bold: true
                     verticalAlignment: Text.AlignVCenter
