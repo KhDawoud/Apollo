@@ -20,6 +20,7 @@ qt_add_qml_module(appApollo
     RESOURCES
         images/logo.png
         images/defaultpfp.png
+        QML_FILES LeaderBoard.qml
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
