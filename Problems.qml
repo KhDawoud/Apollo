@@ -71,13 +71,18 @@ Rectangle {
 
     GridView {
         id: languageGrid
+        // Stretch dynamically between the Title and the Button
         anchors.top: titleText.bottom
-        anchors.topMargin: 50
+        anchors.topMargin: 40
         anchors.bottom: blastOffBtn.top
-        anchors.bottomMargin: 30
+        anchors.bottomMargin: 40
         anchors.horizontalCenter: parent.horizontalCenter
-        height:600
-        width: cellWidth * 4
+
+        // --- The Centering Magic Formula ---
+        // This calculates exactly how many columns can fit based on the window width,
+        // caps it at a maximum of 4 columns, and centers the entire grid.
+        width: Math.min(cellWidth * 4, cellWidth * Math.floor((parent.width - 40) / cellWidth))
+
         cellWidth: 160
         cellHeight: 180
         clip: true
@@ -138,9 +143,9 @@ Rectangle {
 
     Button {
         id: blastOffBtn
-        anchors.top: languageGrid.bottom
-        anchors.topMargin: 40
-        anchors.bottomMargin: 60
+        // Pin to the bottom of the screen instead of relying on the Grid
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 40
         anchors.horizontalCenter: parent.horizontalCenter
         width: 250
         height: 60
@@ -164,6 +169,5 @@ Rectangle {
 
             Behavior on color { ColorAnimation { duration: 150 } }
         }
-
     }
 }
