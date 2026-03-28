@@ -253,6 +253,7 @@ Window {
         anchors.bottom: parent.bottom
         currentIndex: mainNavBar.currentIndex // This links the TabBar to the content
 
+
         // Index 0: Home
         Rectangle { color: "black"; Text { text: "Home Page"; color: "white"; anchors.centerIn: parent } }
 
