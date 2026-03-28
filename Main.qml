@@ -258,7 +258,7 @@ Window {
         Rectangle { color: "black"; Text { text: "Home Page"; color: "white"; anchors.centerIn: parent } }
 
         // Index 1: Problems
-        Rectangle { color: "black"; Text { text: "Problems Page"; color: "white"; anchors.centerIn: parent } }
+        Problems { }
 
         // Index 2: Leaderboard
         LeaderBoard { }
