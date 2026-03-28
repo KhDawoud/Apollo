@@ -32,7 +32,10 @@ Window {
         TabBar {
             id: mainNavBar
             anchors.left: apollologo.right
-            anchors.right: parent.right
+
+            // --- FIX 2: Anchor the right side to the profile button to prevent overlap ---
+            anchors.right: profileButton.left
+
             anchors.verticalCenter: parent.verticalCenter
             anchors.leftMargin: 30
             anchors.rightMargin: 20
@@ -46,7 +49,9 @@ Window {
                 font.pointSize: 14
                 display: AbstractButton.TextOnly
                 hoverEnabled: true
-                width: mainNavBar.width / 5
+
+                // --- FIX 1: Break the loop by sizing based on the text content, not the TabBar ---
+                implicitWidth: Math.max(120, contentItem.implicitWidth + 40)
                 height: 50
 
                 contentItem: Text {

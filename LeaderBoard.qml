@@ -4,7 +4,6 @@ import QtQuick.Layouts
 Rectangle {
     id: rect
     color: "#000015"
-    anchors.fill: parent
 
     Item {
         id: starfield

@@ -5,7 +5,6 @@ import QtQuick.Layouts
 Rectangle {
     id: problemsRoot
     color: "#000015"
-    anchors.fill: parent
     property int selectedIndex: -1
 
     Item {
