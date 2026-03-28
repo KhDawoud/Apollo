@@ -20,6 +20,9 @@ qt_add_qml_module(appApollo
     RESOURCES
         images/logo.png
         images/defaultpfp.png
+        images/1st.png
+        images/2nd.png
+        images/3rd.png
         QML_FILES LeaderBoard.qml
 )
 
