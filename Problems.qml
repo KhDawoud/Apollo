@@ -77,7 +77,7 @@ Rectangle {
         anchors.bottom: blastOffBtn.top
         anchors.bottomMargin: 30
         anchors.horizontalCenter: parent.horizontalCenter
-
+        height:600
         width: cellWidth * 4
         cellWidth: 160
         cellHeight: 180
@@ -139,7 +139,8 @@ Rectangle {
 
     Button {
         id: blastOffBtn
-        anchors.bottom: parent.bottom
+        anchors.top: languageGrid.bottom
+        anchors.topMargin: 40
         anchors.bottomMargin: 60
         anchors.horizontalCenter: parent.horizontalCenter
         width: 250
