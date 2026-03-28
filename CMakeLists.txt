@@ -20,8 +20,6 @@ qt_add_qml_module(appApollo
     RESOURCES
         images/logo.png
         images/defaultpfp.png
-        images/logo.png
-        images/defaultpfp.png
         images/python.png
         images/cpp.png
         images/javascript.png
@@ -30,6 +28,9 @@ qt_add_qml_module(appApollo
         images/java.png
         images/csharp.png
         images/ruby.png
+        images/1st.png
+        images/2nd.png
+        images/3rd.png
         QML_FILES LeaderBoard.qml
         QML_FILES Problems.qml
 )
