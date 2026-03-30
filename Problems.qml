@@ -4,46 +4,8 @@ import QtQuick.Layouts
 
 Rectangle {
     id: problemsRoot
-    color: "#000015"
     property int selectedIndex: -1
-
-    Item {
-        id: starfield
-        anchors.fill: parent
-
-        Repeater {
-            model: 150
-            Rectangle {
-                property int animDuration: Math.random() * 5000 + 1000
-
-                x: Math.random() * starfield.width
-                y: Math.random() * starfield.height
-                width: Math.random() * 3 + 1
-                height: width
-                radius: width / 2
-                color: "#D7D7D7"
-
-                opacity: Math.random()
-
-                SequentialAnimation on opacity {
-                    loops: Animation.Infinite
-                    running: true
-
-                    NumberAnimation {
-                        to: 1.0
-                        duration: animDuration
-                        easing.type: Easing.InOutSine
-                    }
-
-                    NumberAnimation {
-                        to: 0.1
-                        duration: animDuration
-                        easing.type: Easing.InOutSine
-                    }
-                }
-            }
-        }
-    }
+    color: "transparent"
 
     Text {
         id: titleText

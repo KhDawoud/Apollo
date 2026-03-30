@@ -11,12 +11,46 @@ Window {
     title: qsTr("Apollo")
 
     Rectangle {
+        id: masterBackground
+        anchors.fill: parent
+        color: "#000015"
+
+        Item {
+            id: globalStarfield
+            anchors.fill: parent
+
+            Repeater {
+                model: 170
+                Rectangle {
+                    property int animDuration: Math.random() * 5000 + 1000
+                    x: Math.random() * globalStarfield.width
+                    y: Math.random() * globalStarfield.height
+                    width: Math.random() * 3 + 1
+                    height: width
+                    radius: width / 2
+                    color: "#D7D7D7"
+                    opacity: Math.random()
+
+                    SequentialAnimation on opacity {
+                        loops: Animation.Infinite
+                        running: true
+                        NumberAnimation { to: 1.0; duration: animDuration; easing.type: Easing.InOutSine }
+                        NumberAnimation { to: 0.1; duration: animDuration; easing.type: Easing.InOutSine }
+                    }
+                }
+            }
+        }
+    }
+
+
+
+    Rectangle {
         id: header
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
         height: 80
-        color: "#262626"
+        color: "transparent"
 
         Image {
             id: apollologo
@@ -87,6 +121,7 @@ Window {
             anchors.rightMargin: 50
             width: 50
             height: 50
+            z: 10
             hoverEnabled: true
 
             // 1. The Dropdown Menu
@@ -260,7 +295,7 @@ Window {
 
 
         // Index 0: Home
-        Rectangle { color: "black"; Text { text: "Home Page"; color: "white"; anchors.centerIn: parent } }
+        Rectangle { color: "transparent"; Text { text: "Home Page"; color: "white"; anchors.centerIn: parent } }
 
         // Index 1: Problems
         Problems { }
@@ -269,6 +304,6 @@ Window {
         LeaderBoard { }
 
         // Index 3: MatchFinder
-        Rectangle { color: "black"; Text { text: "MatchFinder Page"; color: "white"; anchors.centerIn: parent } }
+        Rectangle { color: "transparent"; Text { text: "MatchFinder Page"; color: "white"; anchors.centerIn: parent } }
     }
 }
