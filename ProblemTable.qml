@@ -4,31 +4,96 @@ import QtQuick.Layouts
 
 Rectangle {
     id: problemsPage
-    color: "transparent"
     anchors.fill: parent
+    color: "transparent"
 
     property string language: "Unknown"
-    property string currentFilter: "All"
+    property string selectedTopic: "All"
+    property string selectedDifficulty: "All"
+    property string sortKey: "name"
+    property bool sortAscending: true
 
-    // --- DATA MODELS ---
     ListModel {
-        id: filterModel
+        id: topicModel
         ListElement { name: "All" }
         ListElement { name: "Arrays" }
         ListElement { name: "Strings" }
-        ListElement { name: "Math" }
-        ListElement { name: "Logic" }
+        ListElement { name: "Algorithms" }
+        ListElement { name: "Graphs" }
+        ListElement { name: "DP" }
+        ListElement { name: "OOP" }
     }
 
     ListModel {
-        id: problemsModel
-        ListElement { name: "Two Sum Target"; topic: "Arrays"; difficulty: "Easy"; diffColor: "#10B981" }
-        ListElement { name: "Reverse Substring"; topic: "Strings"; difficulty: "Medium"; diffColor: "#F59E0B" }
-        ListElement { name: "Matrix Traversal"; topic: "Logic"; difficulty: "Hard"; diffColor: "#EF4444" }
-        ListElement { name: "Prime Factorization"; topic: "Math"; difficulty: "Medium"; diffColor: "#F59E0B" }
-        ListElement { name: "Anagram Checker"; topic: "Strings"; difficulty: "Easy"; diffColor: "#10B981" }
+        id: difficultyModel
+        ListElement { name: "All" }
+        ListElement { name: "Easy" }
+        ListElement { name: "Medium" }
+        ListElement { name: "Hard" }
     }
 
+    ListModel {
+        id: missionsModel
+        ListElement { name: "Array Traversal & State Tracking"; topic: "Arrays"; difficulty: "Easy"; diffColor: "#10B981" }
+        ListElement { name: "Sliding Window Fundamentals"; topic: "Strings"; difficulty: "Medium"; diffColor: "#F59E0B" }
+        ListElement { name: "Hash Maps for Fast Lookup"; topic: "Algorithms"; difficulty: "Easy"; diffColor: "#10B981" }
+        ListElement { name: "Two Pointers Technique"; topic: "Algorithms"; difficulty: "Medium"; diffColor: "#F59E0B" }
+        ListElement { name: "Recursion Basics"; topic: "Algorithms"; difficulty: "Medium"; diffColor: "#F59E0B" }
+        ListElement { name: "Stack Usage"; topic: "Algorithms"; difficulty: "Medium"; diffColor: "#F59E0B" }
+        ListElement { name: "Queue & BFS"; topic: "Graphs"; difficulty: "Hard"; diffColor: "#EF4444" }
+        ListElement { name: "Binary Search"; topic: "Algorithms"; difficulty: "Easy"; diffColor: "#10B981" }
+        ListElement { name: "Sorting Strategies"; topic: "Algorithms"; difficulty: "Medium"; diffColor: "#F59E0B" }
+        ListElement { name: "Greedy Algorithms"; topic: "Algorithms"; difficulty: "Hard"; diffColor: "#EF4444" }
+        ListElement { name: "Dynamic Programming Intro"; topic: "DP"; difficulty: "Hard"; diffColor: "#EF4444" }
+        ListElement { name: "String Parsing"; topic: "Strings"; difficulty: "Medium"; diffColor: "#F59E0B" }
+        ListElement { name: "Graph Representation"; topic: "Graphs"; difficulty: "Medium"; diffColor: "#F59E0B" }
+        ListElement { name: "Bit Manipulation"; topic: "Algorithms"; difficulty: "Hard"; diffColor: "#EF4444" }
+        ListElement { name: "Object Modeling"; topic: "OOP"; difficulty: "Medium"; diffColor: "#F59E0B" }
+    }
+
+    ListModel { id: filteredModel }
+
+    function rebuildModel() {
+        let temp = []
+        for (let i = 0; i < missionsModel.count; i++) {
+            let item = missionsModel.get(i)
+            if ((selectedTopic === "All" || item.topic === selectedTopic) &&
+                (selectedDifficulty === "All" || item.difficulty === selectedDifficulty)) {
+
+                temp.push({
+                    name: item.name,
+                    topic: item.topic,
+                    difficulty: item.difficulty,
+                    diffColor: item.diffColor
+                })
+            }
+        }
+
+        temp.sort(function(a, b) {
+            let valA = a[sortKey]
+            let valB = b[sortKey]
+
+            if (sortKey === "difficulty") {
+                const order = { "Easy": 1, "Medium": 2, "Hard": 3 }
+                valA = order[valA]
+                valB = order[valB]
+                return sortAscending ? valA - valB : valB - valA
+            }
+
+            let result = String(valA).localeCompare(String(valB))
+            return sortAscending ? result : -result
+        })
+
+        filteredModel.clear()
+        for (let i = 0; i < temp.length; i++)
+            filteredModel.append(temp[i])
+    }
+
+    onSelectedTopicChanged: rebuildModel()
+    onSelectedDifficultyChanged: rebuildModel()
+    onSortKeyChanged: rebuildModel()
+    onSortAscendingChanged: rebuildModel()
+    Component.onCompleted: rebuildModel()
 
     RowLayout {
         id: headerRow
@@ -44,64 +109,178 @@ Rectangle {
             contentItem: Text {
                 text: parent.text
                 color: "#94A3B8"
-                font.pointSize: 14
                 font.bold: true
             }
         }
 
         Text {
             Layout.fillWidth: true
-            text: qsTr("MISSIONS: ") + language.toUpperCase()
+            text: "MISSIONS: " + language.toUpperCase()
             color: "white"
             font.pointSize: 20
             font.bold: true
             horizontalAlignment: Text.AlignRight
-            font.letterSpacing: 1
-        }
-    }
-
-    ListView {
-        id: filterList
-        anchors.top: headerRow.bottom
-        anchors.topMargin: 20
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.leftMargin: 40
-        height: 40
-        orientation: ListView.Horizontal
-        spacing: 15
-        model: filterModel
-        clip: true
-
-        delegate: Button {
-            width: implicitWidth
-            height: 35
-            contentItem: Text {
-                text: model.name
-                color: problemsPage.currentFilter === model.name ? "white" : "#94A3B8"
-                font.pointSize: 12
-                font.bold: true
-                verticalAlignment: Text.AlignVCenter
-            }
-            background: Rectangle {
-                radius: 17.5
-                color: problemsPage.currentFilter === model.name ? "#3B82F6" : "#1E293B"
-                border.color: problemsPage.currentFilter === model.name ? "#60A5FA" : "#334155"
-            }
-            onClicked: problemsPage.currentFilter = model.name
         }
     }
 
     Rectangle {
-        id: tableContainer
-        anchors.top: filterList.bottom
-        anchors.topMargin: 30
+        id: filterBar
+        anchors.top: headerRow.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.margins: 40
+        anchors.topMargin: 10
+        height: 60
+        color: "transparent"
+
+        RowLayout {
+            anchors.fill: parent
+            spacing: 12
+
+            Button {
+                id: topicButton
+                text: "Topic: " + selectedTopic
+                height: 36
+
+                contentItem: Text {
+                    text: parent.text + "  ▾"
+                    color: "white"
+                    font.bold: true
+                    leftPadding: 12
+                    rightPadding: 12
+                }
+
+                background: Rectangle {
+                    radius: 18
+                    color: "#1E293B"
+                    border.color: "#334155"
+                }
+
+                onClicked: topicMenu.open()
+
+                Popup {
+                    id: topicMenu
+                    y: parent.height + 6
+                    width: 160
+                    padding: 8
+                    closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+
+                    background: Rectangle {
+                        color: "#ffffff"
+                        radius: 8
+                        border.color: "#cccccc"
+                    }
+
+                    contentItem: Column {
+                        width: parent.width
+
+                        Repeater {
+                            model: topicModel
+
+                            Button {
+                                width: parent.width
+                                height: 36
+                                hoverEnabled: true
+
+                                onClicked: {
+                                    selectedTopic = model.name
+                                    topicMenu.close()
+                                }
+
+                                contentItem: Text {
+                                    text: model.name
+                                    color: "#333"
+                                    leftPadding: 12
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+
+                                background: Rectangle {
+                                    radius: 6
+                                    color: parent.hovered ? "#f2f2f2" : "transparent"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Button {
+                id: difficultyButton
+                text: "Difficulty: " + selectedDifficulty
+                height: 36
+
+                contentItem: Text {
+                    text: parent.text + "  ▾"
+                    color: "white"
+                    font.bold: true
+                    leftPadding: 12
+                    rightPadding: 12
+                }
+
+                background: Rectangle {
+                    radius: 18
+                    color: "#1E293B"
+                    border.color: "#334155"
+                }
+
+                onClicked: difficultyMenu.open()
+
+                Popup {
+                    id: difficultyMenu
+                    y: parent.height + 6
+                    width: 140
+                    padding: 8
+                    closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+
+                    background: Rectangle {
+                        color: "#ffffff"
+                        radius: 8
+                        border.color: "#cccccc"
+                    }
+
+                    contentItem: Column {
+                        width: parent.width
+
+                        Repeater {
+                            model: difficultyModel
+
+                            Button {
+                                width: parent.width
+                                height: 36
+                                hoverEnabled: true
+
+                                onClicked: {
+                                    selectedDifficulty = model.name
+                                    difficultyMenu.close()
+                                }
+
+                                contentItem: Text {
+                                    text: model.name
+                                    color: "#333"
+                                    leftPadding: 12
+                                }
+
+                                background: Rectangle {
+                                    radius: 6
+                                    color: parent.hovered ? "#f2f2f2" : "transparent"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Item { Layout.fillWidth: true }
+        }
+    }
+
+    Rectangle {
+        anchors.top: filterBar.bottom
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        anchors.leftMargin: 40
-        anchors.rightMargin: 40
-        anchors.bottomMargin: 30
+        anchors.margins: 40
+        anchors.topMargin: 10
 
         color: "#131E30"
         radius: 12
@@ -112,41 +291,101 @@ Rectangle {
             spacing: 0
 
             Rectangle {
-                id: tableHeader
                 Layout.fillWidth: true
                 Layout.preferredHeight: 50
                 color: "#1E293B"
-                radius: 12
-
-                Rectangle {
-                    anchors.bottom: parent.bottom
-                    width: parent.width
-                    height: parent.radius
-                    color: parent.color
-                }
 
                 RowLayout {
                     anchors.fill: parent
                     anchors.leftMargin: 20
                     anchors.rightMargin: 20
-                    z: 1
 
-                    Text {
+                    Item {
                         Layout.fillWidth: true
-                        text: "MISSION NAME"
-                        color: "#94A3B8"; font.bold: true; font.pointSize: 11
+                        Layout.fillHeight: true
+                        Layout.preferredWidth: 3
+
+                        Row {
+                            anchors.centerIn: parent
+
+                            Text {
+                                text: "MISSION NAME"
+                                color: "#94A3B8"
+                                font.bold: true
+                            }
+                        }
                     }
-                    Text {
-                        Layout.preferredWidth: 120
-                        text: "TOPIC"
-                        color: "#94A3B8"; font.bold: true; font.pointSize: 11
-                        horizontalAlignment: Text.AlignHCenter
+
+                    Item {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Layout.preferredWidth: 1.5
+
+                        Row {
+                            anchors.centerIn: parent
+                            spacing: 6
+
+                            Text {
+                                text: "TOPIC"
+                                color: "#94A3B8"
+                                font.bold: true
+                            }
+
+                            Text {
+                                text: sortKey === "topic" ? (sortAscending ? "▲" : "▼") : ""
+                                color: "#60A5FA"
+                                font.pixelSize: 10
+                            }
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                if (sortKey === "topic")
+                                    sortAscending = !sortAscending
+                                else {
+                                    sortKey = "topic"
+                                    sortAscending = true
+                                }
+                            }
+                        }
                     }
-                    Text {
-                        Layout.preferredWidth: 100
-                        text: "DIFFICULTY"
-                        color: "#94A3B8"; font.bold: true; font.pointSize: 11
-                        horizontalAlignment: Text.AlignHCenter
+
+                    Item {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Layout.preferredWidth: 1
+
+                        Row {
+                            anchors.centerIn: parent
+                            spacing: 6
+
+                            Text {
+                                text: "DIFFICULTY"
+                                color: "#94A3B8"
+                                font.bold: true
+                            }
+
+                            Text {
+                                text: sortKey === "difficulty" ? (sortAscending ? "▲" : "▼") : ""
+                                color: "#60A5FA"
+                                font.pixelSize: 10
+                            }
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                if (sortKey === "difficulty")
+                                    sortAscending = !sortAscending
+                                else {
+                                    sortKey = "difficulty"
+                                    sortAscending = true
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -155,79 +394,57 @@ Rectangle {
                     width: parent.width
                     height: 1
                     color: "#334155"
-                    z: 2
                 }
             }
 
             ListView {
-                id: tableBody
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                model: filteredModel
                 clip: true
-                spacing: 0
-                model: problemsModel
 
                 delegate: Rectangle {
-                    id: rowDelegate
-                    width: tableBody.width
-
-                    visible: problemsPage.currentFilter === "All" || problemsPage.currentFilter === model.topic
-                    height: visible ? 60 : 0
-
-                    color: mouseArea.containsMouse ? "#1E293B" : "transparent"
-
-                    Behavior on color { ColorAnimation { duration: 100 } }
+                    width: ListView.view.width
+                    height: 50
+                    color: index % 2 === 0 ? "transparent" : "#1E293B80"
 
                     RowLayout {
                         anchors.fill: parent
                         anchors.leftMargin: 20
                         anchors.rightMargin: 20
-                        spacing: 20
 
                         Text {
                             Layout.fillWidth: true
+                            Layout.preferredWidth: 3
                             text: model.name
-                            color: "white"; font.pointSize: 13; font.bold: true
-                        }
-
-                        Item {
-                            Layout.preferredWidth: 120
-                            height: 28
-                            Rectangle {
-                                anchors.centerIn: parent
-                                width: 100; height: 24
-                                color: "transparent"; border.color: "#334155"
-                                border.width: 1; radius: 12
-                                Text {
-                                    anchors.centerIn: parent; text: model.topic
-                                    color: "#CBD5E1"; font.pointSize: 10
-                                }
-                            }
+                            color: "white"
+                            font.pixelSize: 14
                         }
 
                         Text {
-                            Layout.preferredWidth: 100
+                            Layout.fillWidth: true
+                            Layout.preferredWidth: 1.5
+                            text: model.topic
+                            color: "#94A3B8"
+                            font.pixelSize: 14
+                        }
+
+                        Text {
+                            Layout.fillWidth: true
+                            Layout.preferredWidth: 1
                             text: model.difficulty
                             color: model.diffColor
-                            font.pointSize: 12; font.bold: true
-                            horizontalAlignment: Text.AlignHCenter
+                            font.bold: true
+                            font.pixelSize: 14
                         }
                     }
 
-                    // Separator
                     Rectangle {
                         anchors.bottom: parent.bottom
                         width: parent.width
                         height: 1
                         color: "#334155"
-                        visible: rowDelegate.visible // Only if row is shown
-                    }
-
-                    MouseArea {
-                        id: mouseArea
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        onClicked: console.log("Selected Problem: " + model.name)
+                        opacity: 0.3
                     }
                 }
             }
