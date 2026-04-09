@@ -9,6 +9,7 @@ Window {
     height: 720
     visible: true
     title: qsTr("Apollo")
+    visibility: Window.Maximized
 
     Rectangle {
         id: masterBackground
