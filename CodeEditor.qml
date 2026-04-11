@@ -4,7 +4,6 @@ import QtQuick.Layouts
 
 Rectangle {
     id: root
-    // Classic IDE Dark Theme Background
     color: "#1E1E1E"
     radius: 12
     border.color: "#333333"
@@ -13,18 +12,16 @@ Rectangle {
     property alias text: editor.text
     property alias textDocument: editor.textDocument
     property int fontSize: 15
-    // Classic IDE Default Text Color
     property string fontColor: "#D4D4D4"
 
     RowLayout {
         anchors.fill: parent
         spacing: 0
 
-        // 1. Line Numbers Gutter
+        // Line Numbers
         Rectangle {
             Layout.fillHeight: true
             Layout.preferredWidth: 45
-            // Gutter background
             color: "#252526"
 
             Flickable {
@@ -54,7 +51,6 @@ Rectangle {
                 }
             }
 
-            // Gutter Border
             Rectangle {
                 anchors.right: parent.right
                 height: parent.height
@@ -63,7 +59,6 @@ Rectangle {
             }
         }
 
-        // 2. The Actual Code Editor
         ScrollView {
             id: editorScrollView
             Layout.fillWidth: true
