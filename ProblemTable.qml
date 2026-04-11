@@ -406,12 +406,27 @@ Rectangle {
                 delegate: Rectangle {
                     width: ListView.view.width
                     height: 50
-                    color: index % 2 === 0 ? "transparent" : "#1E293B80"
+                    // Evaluate hover state to determine background color
+                    color: rowMouseArea.containsMouse ? "#334155" : (index % 2 === 0 ? "transparent" : "#1E293B80")
+
+                    // Added hoverEnabled and an ID to reference it above
+                    MouseArea {
+                        id: rowMouseArea
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        hoverEnabled: true
+                        onDoubleClicked: {
+                            problemsPage.StackView.view.push("MissionSolver.qml", {
+                                "missionName": model.name
+                            })
+                        }
+                    }
 
                     RowLayout {
                         anchors.fill: parent
                         anchors.leftMargin: 20
                         anchors.rightMargin: 20
+                        enabled: false
 
                         Text {
                             Layout.fillWidth: true
