@@ -5,9 +5,9 @@ import Apollo.Code
 
 Rectangle {
     id: solvingPage
-    anchors.fill: parent
     color: "transparent"
 
+    property string language: "Unknown"
     property string missionName: "Array Traversal & State Tracking"
     property string missionDescription: "In this mission, you need to traverse the given array and track the state of the system modules. \n\nWrite a function that returns true if all primary thrusters are operational, otherwise return false. Optimize your solution to run in O(n) time.\n\nExample Input: [1, 1, 0, 1]\nExpected Output: false"
     property string initialCode: "class Solution {\npublic:\n    void checkSolution() {\n       // Write your code here\n       return;\n    }\n};\n"

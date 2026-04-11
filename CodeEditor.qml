@@ -40,9 +40,8 @@ Rectangle {
                             width: 45
                             height: editor.contentHeight / editor.lineCount
                             text: index + 1
-                            // Muted gray for line numbers
                             color: "#858585"
-                            font.family: "monospace"
+                            font.family: "Courier New"
                             font.pixelSize: root.fontSize
                             horizontalAlignment: Text.AlignHCenter
                             verticalAlignment: Text.AlignVCenter
