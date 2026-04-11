@@ -93,13 +93,17 @@ Rectangle {
                                 }
 
                                 ScrollView {
+                                    id: textScrollView
                                     Layout.fillWidth: true
                                     Layout.fillHeight: true
                                     clip: true
                                     ScrollBar.vertical.policy: ScrollBar.AsNeeded
 
+                                    contentWidth: availableWidth
+
                                     Text {
-                                        width: parent.width
+                                        width: textScrollView.availableWidth
+
                                         text: modelData.content
                                         textFormat: Text.MarkdownText
                                         color: "#D4D4D4"
