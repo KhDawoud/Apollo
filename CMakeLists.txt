@@ -43,6 +43,7 @@ qt_add_qml_module(appApollo
         images/3rd.png
         QML_FILES CodeEditor.qml
         SOURCES Highlighter.h
+        QML_FILES Login.qml
 )
 
 set_target_properties(appApollo PROPERTIES
