@@ -15,6 +15,7 @@ namespace http = beast::http;
 namespace net = boost::asio;
 using tcp = boost::asio::ip::tcp;
 
+// so i dont push my api key to github
 void load_env(const std::string &file_path = ".env")
 {
     std::ifstream file(file_path);
@@ -50,32 +51,38 @@ void handle_request(http::request<http::string_body> &req, http::response<http::
     res.set(http::field::server, "Boost.Beast Backend");
     res.set(http::field::content_type, "application/json");
 
-    if (req.method() == http::verb::post && req.target() == "/api/login")
+    const char *db_url = std::getenv("DATABASE_URL");
+    if (!db_url)
     {
-        try
-        {
-            const char *db_url = std::getenv("DATABASE_URL");
-            if (!db_url)
-                throw std::runtime_error("DATABASE_URL missing.");
+        res.result(http::status::internal_server_error);
+        res.body() = R"({"status": "error", "message": "Database configuration missing"})";
+        res.prepare_payload();
+        return;
+    }
 
+    try
+    {
+        if (req.method() == http::verb::post && req.target() == "/api/login")
+        {
             boost::json::value parsed_body = boost::json::parse(req.body());
-            std::string username = parsed_body.at("username").as_string().c_str();
+            std::string identifier = parsed_body.at("identifier").as_string().c_str();
             std::string raw_password = parsed_body.at("password").as_string().c_str();
 
             pqxx::connection C(db_url);
             pqxx::nontransaction N(C);
 
             std::string query =
-                "SELECT total_xp FROM users WHERE email = " + N.quote(username) +
-                " AND password_hash = crypt(" + N.quote(raw_password) + ", password_hash);";
+                "SELECT username, total_xp FROM users WHERE (email = " + N.quote(identifier) +
+                " OR username = " + N.quote(identifier) + ") " +
+                "AND password_hash = crypt(" + N.quote(raw_password) + ", password_hash);";
 
             pqxx::result R = N.exec(query);
 
             if (!R.empty())
             {
-                // account exists
                 boost::json::object response_json;
                 response_json["status"] = "success";
+                response_json["username"] = R[0]["username"].as<std::string>();
                 response_json["total_xp"] = R[0]["total_xp"].as<int>();
 
                 res.result(http::status::ok);
@@ -83,81 +90,59 @@ void handle_request(http::request<http::string_body> &req, http::response<http::
             }
             else
             {
-                // no account
-                boost::json::object response_json;
-                response_json["status"] = "error";
-                response_json["message"] = "Invalid username or password.";
-
                 res.result(http::status::unauthorized);
-                res.body() = boost::json::serialize(response_json);
+                res.body() = R"({"status": "error", "message": "Invalid credentials"})";
             }
         }
-        catch (const std::exception &e)
+        else if (req.method() == http::verb::post && req.target() == "/api/signup")
         {
-            boost::json::object response_json;
-            response_json["status"] = "error";
-            response_json["message"] = "Server error occurred.";
-
-            res.result(http::status::internal_server_error);
-            res.body() = boost::json::serialize(response_json);
-        }
-    }
-    else if (req.method() == http::verb::post && req.target() == "/api/signup")
-    {
-        try
-        {
-            const char *db_url = std::getenv("DATABASE_URL");
-            if (!db_url)
-                throw std::runtime_error("DATABASE_URL missing.");
-
             boost::json::value parsed_body = boost::json::parse(req.body());
+            std::string email = parsed_body.at("email").as_string().c_str();
             std::string username = parsed_body.at("username").as_string().c_str();
             std::string raw_password = parsed_body.at("password").as_string().c_str();
 
             pqxx::connection C(db_url);
-            // work function ensures no data corruption in event of failure
+            // this makes sure data isnt corrupted if something fails
             pqxx::work W(C);
 
             std::string query =
-                "INSERT INTO users (email, password_hash) VALUES (" +
-                W.quote(username) + ", crypt(" + W.quote(raw_password) + ", gen_salt('bf'))) RETURNING total_xp;";
+                "INSERT INTO users (email, username, password_hash) VALUES (" +
+                W.quote(email) + ", " +
+                W.quote(username) + ", " +
+                "crypt(" + W.quote(raw_password) + ", gen_salt('bf'))) " +
+                "RETURNING username, total_xp;";
 
             pqxx::result R = W.exec(query);
             W.commit();
 
             boost::json::object response_json;
             response_json["status"] = "success";
-            response_json["message"] = "Account created successfully.";
-            response_json["total_xp"] = R[0]["total_xp"].as<int>(); // for now I only return xp but we'll return everything eventually
+            response_json["message"] = "User created";
+            response_json["username"] = R[0]["username"].as<std::string>();
+            response_json["total_xp"] = R[0]["total_xp"].as<int>();
 
             res.result(http::status::created);
             res.body() = boost::json::serialize(response_json);
         }
-        catch (const pqxx::integrity_constraint_violation &e)
+        else
         {
-            // this one specifically means email is already in use
-            boost::json::object response_json;
-            response_json["status"] = "error";
-            response_json["message"] = "Username already exists.";
-
-            res.result(http::status::conflict);
-            res.body() = boost::json::serialize(response_json);
-        }
-        catch (const std::exception &e)
-        {
-            boost::json::object response_json;
-            response_json["status"] = "error";
-            response_json["message"] = "Server error occurred.";
-
-            res.result(http::status::internal_server_error);
-            res.body() = boost::json::serialize(response_json);
+            res.result(http::status::not_found);
+            res.body() = R"({"status": "error", "message": "Endpoint not found"})";
         }
     }
-    else
+    catch (const pqxx::integrity_constraint_violation &e)
     {
-        res.result(http::status::not_found);
-        res.body() = R"({"status": "error", "message": "Endpoint not found"})";
+        // this is specifically when u try to login with same email or name as somemone else
+        res.result(http::status::conflict);
+        res.body() = R"({"status": "error", "message": "Username or Email already exists"})";
     }
+    catch (const std::exception &e)
+    {
+        res.result(http::status::internal_server_error);
+        res.body() = R"({"status": "error", "message": "An internal error occurred"})";
+        std::cerr << "Server Error: " << e.what() << "\n";
+    }
+
     res.prepare_payload();
 }
 
@@ -169,7 +154,7 @@ int main()
         net::io_context ioc;
         tcp::acceptor acceptor(ioc, {net::ip::make_address("0.0.0.0"), 8080});
 
-        std::cout << "Server listening on 0.0.0.0:8080" << std::endl;
+        std::cout << "Server running on port 8080..." << std::endl;
 
         while (true)
         {
