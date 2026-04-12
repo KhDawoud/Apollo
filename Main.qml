@@ -10,6 +10,7 @@ Window {
     visible: true
     title: qsTr("Apollo")
     visibility: Window.Maximized
+    property bool isLoggedIn: false
 
     Rectangle {
         id: masterBackground
@@ -67,9 +68,9 @@ Window {
         TabBar {
             id: mainNavBar
             anchors.left: apollologo.right
-
+            width: implicitWidth
             // --- FIX 2: Anchor the right side to the profile button to prevent overlap ---
-            anchors.right: profileButton.left
+            anchors.right: isLoggedIn? profileButton.left :profilearea.left
 
             anchors.verticalCenter: parent.verticalCenter
             anchors.leftMargin: 30
@@ -115,174 +116,215 @@ Window {
             ApolloTab { text: qsTr("Leaderboard") }
             ApolloTab { text: qsTr("MatchFinder") }
         }
-        Button {
-            id: profileButton
+
+        Item{
+            id: profilearea
+            width: 120
+            height: 50
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
-            anchors.rightMargin: 50
-            width: 50
-            height: 50
-            z: 10
-            hoverEnabled: true
-
-            // 1. The Dropdown Menu
-            // 1. The Custom Dropdown (No hidden Qt Menu formatting!)
-            Popup {
-                id: profileMenu
-                x: profileButton.width - width + 20
-                y: profileButton.height + 7
-                width: 160
-
-                // Strip ALL default invisible borders
-                padding: 10
-                margins: 0
-
-                // Automatically closes if you click outside of it
-                closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
-
-                // The White Background Area
+            anchors.rightMargin: 20
+            Button {
+                id: signInButton
+                visible: !isLoggedIn
+                text: "Sign In"
+                anchors.fill: parent
+                onClicked: mainNavBar.currentIndex = 4
+                display: AbstractButton.TextOnly
+                hoverEnabled: true
                 background: Rectangle {
-                    color: "#ffffff"
+                    color: signInButton.checked ? "#134ec0" : (signInButton.hovered ? "#22ffffff" : "transparent")
                     radius: 8
-                    border.color: "#cccccc"
+
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: 100
+                            easing.type: Easing.OutQuad
+                        }
+                    }
                 }
-
-                // The Content Area
-                contentItem: Column {
-                    width: parent.width
-                    // Tiny padding so the top/bottom buttons don't clip your rounded corners
-                    topPadding: 4
-                    bottomPadding: 4
-
-                    // --- Item 1: My Account ---
-                    Button {
-                        width: parent.width
-                        height: 40
-                        hoverEnabled: true
-                        onClicked: profileMenu.close() // Close menu when clicked
-
-                        contentItem: Text {
-                            text: qsTr("My Account")
-                            color: "#333333"
-                            font.pointSize: 13
-                            font.weight: Font.DemiBold
-                            verticalAlignment: Text.AlignVCenter
-                            leftPadding: 15
-                        }
-
-                        background: Rectangle {
-                            color: parent.hovered ? "#f2f2f2" : "transparent"
-                            radius: 6
-
-                        }
-                    }
-
-                    // --- Light Gray Separator ---
-                    Item {
-                        width: parent.width
-                        height: 11 // 5px top gap + 1px line + 5px bottom gap
-
-                        Rectangle {
-                            width: parent.width
-                            height: 1
-                            color: "#e0e0e0"
-                            anchors.verticalCenter: parent.verticalCenter // Centers the line in the gap
-                        }
-                    }
-
-                    // --- Item 2: Settings ---
-                    Button {
-                        width: parent.width
-                        height: 40
-                        hoverEnabled: true
-                        onClicked: profileMenu.close()
-
-                        contentItem: Text {
-                            text: qsTr("Settings")
-                            color: "#333333"
-                            font.pointSize: 13
-                            font.weight: Font.DemiBold
-                            verticalAlignment: Text.AlignVCenter
-                            leftPadding: 15
-                        }
-
-                        background: Rectangle {
-                            color: parent.hovered ? "#f2f2f2" : "transparent"
-                            radius: 6
-                        }
-                    }
-
-                    // --- Light Gray Separator ---
-                    Item {
-                        width: parent.width
-                        height: 11 // 5px top gap + 1px line + 5px bottom gap
-
-                        Rectangle {
-                            width: parent.width
-                            height: 1
-                            color: "#e0e0e0"
-                            anchors.verticalCenter: parent.verticalCenter // Centers the line in the gap
-                        }
-                    }
-
-                    // --- Item 3: Log Out ---
-                    Button {
-                        width: parent.width
-                        height: 40
-                        hoverEnabled: true
-                        onClicked: profileMenu.close()
-
-                        contentItem: Text {
-                            text: qsTr("Log Out")
-                            color: "#d93025"
-                            font.pointSize: 13
-                            font.weight: Font.DemiBold
-                            verticalAlignment: Text.AlignVCenter
-                            leftPadding: 15
-                        }
-
-                        background: Rectangle {
-                            color: parent.hovered ? "#fdf0ef" : "transparent"
-                            radius: 6
-                        }
-                    }
+                contentItem: Text {
+                    text: parent.text
+                    color: "white"
+                    font.bold: true
+                    font.styleName: "Bold"
+                    font.weight: Font.Bold
+                    font.pointSize: 14
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
                 }
             }
+            Button {
+                id: profileButton
+                visible: isLoggedIn
+                anchors.right: parent.right
+                anchors.rightMargin: 20
+                width: 50
+                height: 50
+                z: 10
+                hoverEnabled: true
 
-            // Open the menu when the button is clicked
-            onClicked: profileMenu.open()
+                // 1. The Dropdown Menu
+                // 1. The Custom Dropdown (No hidden Qt Menu formatting!)
+                Popup {
+                    id: profileMenu
+                    x: profileButton.width - width + 20
+                    y: profileButton.height + 7
+                    width: 160
 
-            // 2. The Custom Profile Picture and Animated Ring
-            background: Item {
-                // The Animated Ring
-                Rectangle {
-                    anchors.centerIn: parent
-                    width: parent.width
-                    height: parent.height
-                    radius: width / 2
-                    color: "transparent"
+                    // Strip ALL default invisible borders
+                    padding: 10
+                    margins: 0
 
-                    // Shows border when hovered OR when the menu is actively open
-                    border.width: profileButton.hovered || profileMenu.opened ? 3 : 0
-                    border.color: "#134ec0"
+                    // Automatically closes if you click outside of it
+                    closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
-                    // Expands slightly when hovered
-                    scale: profileButton.hovered || profileMenu.opened ? 1.15 : 1.0
+                    // The White Background Area
+                    background: Rectangle {
+                        color: "#ffffff"
+                        radius: 8
+                        border.color: "#cccccc"
+                    }
 
-                    // Smooth animations for the ring
-                    Behavior on border.width { NumberAnimation { duration: 150 } }
-                    Behavior on scale {
-                        NumberAnimation { duration: 200; easing.type: Easing.OutBack }
+                    // The Content Area
+                    contentItem: Column {
+                        width: parent.width
+                        // Tiny padding so the top/bottom buttons don't clip your rounded corners
+                        topPadding: 4
+                        bottomPadding: 4
+
+                        // --- Item 1: My Account ---
+                        Button {
+                            width: parent.width
+                            height: 40
+                            hoverEnabled: true
+                            onClicked: profileMenu.close() // Close menu when clicked
+
+                            contentItem: Text {
+                                text: qsTr("My Account")
+                                color: "#333333"
+                                font.pointSize: 13
+                                font.weight: Font.DemiBold
+                                verticalAlignment: Text.AlignVCenter
+                                leftPadding: 15
+                            }
+
+                            background: Rectangle {
+                                color: parent.hovered ? "#f2f2f2" : "transparent"
+                                radius: 6
+
+                            }
+                        }
+
+                        // --- Light Gray Separator ---
+                        Item {
+                            width: parent.width
+                            height: 11 // 5px top gap + 1px line + 5px bottom gap
+
+                            Rectangle {
+                                width: parent.width
+                                height: 1
+                                color: "#e0e0e0"
+                                anchors.verticalCenter: parent.verticalCenter // Centers the line in the gap
+                            }
+                        }
+
+                        // --- Item 2: Settings ---
+                        Button {
+                            width: parent.width
+                            height: 40
+                            hoverEnabled: true
+                            onClicked: profileMenu.close()
+
+                            contentItem: Text {
+                                text: qsTr("Settings")
+                                color: "#333333"
+                                font.pointSize: 13
+                                font.weight: Font.DemiBold
+                                verticalAlignment: Text.AlignVCenter
+                                leftPadding: 15
+                            }
+
+                            background: Rectangle {
+                                color: parent.hovered ? "#f2f2f2" : "transparent"
+                                radius: 6
+                            }
+                        }
+
+                        // --- Light Gray Separator ---
+                        Item {
+                            width: parent.width
+                            height: 11 // 5px top gap + 1px line + 5px bottom gap
+
+                            Rectangle {
+                                width: parent.width
+                                height: 1
+                                color: "#e0e0e0"
+                                anchors.verticalCenter: parent.verticalCenter // Centers the line in the gap
+                            }
+                        }
+
+                        // --- Item 3: Log Out ---
+                        Button {
+                            width: parent.width
+                            height: 40
+                            hoverEnabled: true
+                            onClicked:{
+                                profileMenu.close()
+                                isLoggedIn = false
+                            }
+                            contentItem: Text {
+                                text: qsTr("Log Out")
+                                color: "#d93025"
+                                font.pointSize: 13
+                                font.weight: Font.DemiBold
+                                verticalAlignment: Text.AlignVCenter
+                                leftPadding: 15
+                            }
+
+                            background: Rectangle {
+                                color: parent.hovered ? "#fdf0ef" : "transparent"
+                                radius: 6
+                            }
+                        }
                     }
                 }
 
-                // The Profile Image
-                Image {
-                    anchors.centerIn: parent
-                    width: parent.width // Scaled down to fit inside the ring
-                    height: parent.height
-                    source: "images/defaultpfp.png"
-                    fillMode: Image.PreserveAspectCrop
+                // Open the menu when the button is clicked
+                onClicked: profileMenu.open()
+
+                // 2. The Custom Profile Picture and Animated Ring
+                background: Item {
+                    // The Animated Ring
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: parent.width
+                        height: parent.height
+                        radius: width / 2
+                        color: "transparent"
+
+                        // Shows border when hovered OR when the menu is actively open
+                        border.width: profileButton.hovered || profileMenu.opened ? 3 : 0
+                        border.color: "#134ec0"
+
+                        // Expands slightly when hovered
+                        scale: profileButton.hovered || profileMenu.opened ? 1.15 : 1.0
+
+                        // Smooth animations for the ring
+                        Behavior on border.width { NumberAnimation { duration: 150 } }
+                        Behavior on scale {
+                            NumberAnimation { duration: 200; easing.type: Easing.OutBack }
+                        }
+                    }
+
+                    // The Profile Image
+                    Image {
+                        anchors.centerIn: parent
+                        width: parent.width // Scaled down to fit inside the ring
+                        height: parent.height
+                        source: "images/defaultpfp.png"
+                        fillMode: Image.PreserveAspectCrop
+                    }
                 }
             }
         }
@@ -306,5 +348,8 @@ Window {
 
         // Index 3: MatchFinder
         Rectangle { color: "transparent"; Text { text: "MatchFinder Page"; color: "white"; anchors.centerIn: parent } }
+
+        //Index 4: Login
+        Login{}
     }
 }
