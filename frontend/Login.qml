@@ -29,15 +29,24 @@ Rectangle {
                 // Optionally, show this errorMessage in a Text element on screen
             }
         }
+        Text {
+        id: loginTitle
+        text: "SIGN IN"
+        anchors.top: parent.top
+        anchors.topMargin: parent.height * 0.05
+        anchors.horizontalCenter: parent.horizontalCenter
+        font.bold: true
+        font.pointSize: 40
+        color: "white"
+        }
         Rectangle {
             id: loginBox
 
             width: 450
             height: 550
-            anchors.verticalCenter:  parent.verticalCenter
+            anchors.top: loginTitle.bottom
+            anchors.topMargin: 30
             anchors.horizontalCenter: parent.horizontalCenter
-
-
             color: Qt.rgba(17/255, 45/255, 78/255, 0.5)
             radius: 20
             border.color: "#4CC9FE"
@@ -136,17 +145,44 @@ Rectangle {
                         authManager.login(userField.text, passField.text)
                     }
                 }
+                RowLayout {
+                    Layout.alignment: Qt.AlignHCenter 
+                    spacing: 20 
 
-                Text {
-                    text: "Forgot Password?"
-                    color: "#DBE2EF"
-                    font.pointSize: 10
-                    Layout.alignment: Qt.AlignHCenter
+                    Text {
+                        text: "Create an account"
+                        color: "#DBE2EF"
+                        font.pointSize: 10
+                        
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            
+                            onClicked: {
+                                console.log("Navigating to Sign Up page...")
+                                // This changes the page to index 5
+                                mainNavBar.currentIndex = 5 
+                            }
+                        }
+                    }
 
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: console.log("Reset password clicked")
+                    Rectangle {
+                        width: 1
+                        height: 12
+                        color: "#3F72AF"
+                        opacity: 0.5
+                    }
+
+                    Text {
+                        text: "Forgot Password?"
+                        color: "#DBE2EF"
+                        font.pointSize: 10
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: console.log("Reset password clicked")
+                        }
                     }
                 }
             }
