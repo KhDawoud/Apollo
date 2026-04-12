@@ -28,6 +28,7 @@ qt_add_qml_module(appApollo
         MissionExplanation.qml
         MissionSolver.qml
         Home.qml
+        Signup.qml
     RESOURCES
         images/logo.png
         images/defaultpfp.png

@@ -77,6 +77,13 @@ Window {
             anchors.rightMargin: 20
             spacing: 23
             background: Item {}
+            currentIndex: 0
+            onCurrentIndexChanged: {
+                if (!isLoggedIn && (currentIndex === 1 || currentIndex === 2|| currentIndex === 3)) {
+                    console.log("Access denied. Please log in.")
+                    currentIndex = 4 
+                }
+            }
 
             component ApolloTab: TabButton {
                 id: control
@@ -356,5 +363,7 @@ Window {
 
         //Index 4: Login
         Login{}
+        //Index 5: Signup
+        Signup{}
     }
 }
