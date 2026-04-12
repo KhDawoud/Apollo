@@ -44,6 +44,7 @@ qt_add_qml_module(appApollo
         QML_FILES CodeEditor.qml
         SOURCES Highlighter.h
         QML_FILES Login.qml
+        SOURCES authmanager.h authmanager.cpp
 )
 
 set_target_properties(appApollo PROPERTIES

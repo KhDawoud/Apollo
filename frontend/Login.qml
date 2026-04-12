@@ -9,6 +9,26 @@ Rectangle {
         id: loginRoot
         anchors.fill: parent
         color: "transparent"
+        Connections {
+            target: authManager
+
+            function onLoginSuccess(totalXp) {
+                console.log("Logged in! User XP: " + totalXp)
+                loginBtn.enabled = true
+                loginBtn.text = "LOGIN"
+
+                isLoggedIn = true
+                mainNavBar.currentIndex = 0 // Redirect to Home
+            }
+
+            function onLoginFailed(errorMessage) {
+                console.log("Login Failed: " + errorMessage)
+                loginBtn.enabled = true
+                loginBtn.text = "LOGIN"
+
+                // Optionally, show this errorMessage in a Text element on screen
+            }
+        }
         Rectangle {
             id: loginBox
 
@@ -111,9 +131,9 @@ Rectangle {
                     }
 
                     onClicked: {
-                        //here we will add the verification procces but for now it just logs you in
-                        isLoggedIn = true
-                        mainNavBar.currentIndex = 0 // Redirect to Home
+                        loginBtn.enabled = false
+                        loginBtn.text = "LOGGING IN..."
+                        authManager.login(userField.text, passField.text)
                     }
                 }
 
