@@ -4,6 +4,7 @@ import QtQuick.Layouts
 Rectangle {
     id: rect
     color: "transparent"
+    visible: mainNavBar.currentIndex === 2
 
     Text {
         id: titleText
@@ -36,45 +37,44 @@ Rectangle {
             border.color: "#3F72AF"
             border.width: 2
             Row {
-                    id: filterBar
-                    spacing: 20
+                id: filterBar
+                spacing: 20
 
-                    // --- POSITIONING ---
-                    anchors.bottom: parent.top
-                    anchors.left: parent.left
-                    anchors.leftMargin: 10
-                    anchors.bottomMargin: 5
+                // --- POSITIONING ---
+                anchors.bottom: parent.top
+                anchors.left: parent.left
+                anchors.leftMargin: 10
+                anchors.bottomMargin: 5
 
-                    property bool showingFriends: false
+                property bool showingFriends: false
 
-                    // Global Tab
-                    Button {
-                        id: globalTab
-                        text: "GLOBAL"
-                        flat: true
-                        onClicked: filterBar.showingFriends = false
-                        contentItem: Text {
-                            text: parent.text
-                            font.bold: true
-                            color: !filterBar.showingFriends ? "#3F72AF" : "white"
-                        }
+                // Global Tab
+                Button {
+                    id: globalTab
+                    text: "GLOBAL"
+                    flat: true
+                    onClicked: filterBar.showingFriends = false
+                    contentItem: Text {
+                        text: parent.text
+                        font.bold: true
+                        color: !filterBar.showingFriends ? "#3F72AF" : "white"
                     }
-
-                    // Friends Tab
-                    Button {
-                        id: friendsTab
-                        text: "FRIENDS"
-                        flat: true
-                        onClicked: filterBar.showingFriends = true
-                        contentItem: Text {
-                            text: parent.text
-                            font.bold: true
-                            color: filterBar.showingFriends ? "#3F72AF" : "white"
-                        }
-                    }
-
-                    // The Underline Indicator
                 }
+
+                // Friends Tab
+                Button {
+                    id: friendsTab
+                    text: "FRIENDS"
+                    flat: true
+                    onClicked: filterBar.showingFriends = true
+                    contentItem: Text {
+                        text: parent.text
+                        font.bold: true
+                        color: filterBar.showingFriends ? "#3F72AF" : "white"
+                    }
+                }
+            }
+            // The Underline Indicator
             Rectangle {
                 id: activeIndicator
                 height: 3
@@ -327,7 +327,7 @@ Rectangle {
                         anchors.centerIn: parent
                         width: parent.width - 20
                         Text { text: "TOTAL SCORE"; color: "#DBE2EF"; font.pointSize: 9; font.bold: true }
-                        Text { text: "25,400"; color: "white"; font.pointSize: 20; font.bold: true }
+                        Text { text: "7,450"; color: "white"; font.pointSize: 20; font.bold: true }
                     }
                 }
 
