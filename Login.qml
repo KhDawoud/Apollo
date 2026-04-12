@@ -104,7 +104,7 @@ Rectangle {
                     }
 
                     background: Rectangle {
-                        color: loginBtn.down ? "#c23a13" : (loginBtn.hovered ? "#f05629" : "#E25822")
+                        color: loginBtn.down ? "#c23a13" : (loginBtn.hovered ? "#f05629" : "#444444")
                         radius: 10
 
                         Behavior on color { ColorAnimation { duration: 100 } }
