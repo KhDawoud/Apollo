@@ -338,7 +338,12 @@ Window {
 
 
         // Index 0: Home
-        Rectangle { color: "transparent"; Text { text: "Home Page"; color: "white"; anchors.centerIn: parent } }
+        Home {
+                onGoToProblems: mainNavBar.currentIndex = 1  // listen for the signal
+                onGoToLeaderboard: mainNavBar.currentIndex = 2
+                onGoToMatchFinder: mainNavBar.currentIndex = 3
+                onGoToProgress: mainNavBar.currentIndex = 2 // till progress secion created as seperate page or in smth else
+            }
 
         // Index 1: Problems
         Problems { }

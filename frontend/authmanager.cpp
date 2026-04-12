@@ -1,4 +1,4 @@
-#include "AuthManager.h"
+#include "authmanager.h"
 #include <QNetworkRequest>
 #include <QUrl>
 #include <QJsonObject>

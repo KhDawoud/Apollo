@@ -27,6 +27,7 @@ qt_add_qml_module(appApollo
         ProblemTable.qml
         MissionExplanation.qml
         MissionSolver.qml
+        Home.qml
     RESOURCES
         images/logo.png
         images/defaultpfp.png
@@ -37,10 +38,15 @@ qt_add_qml_module(appApollo
         images/rust.png
         images/java.png
         images/csharp.png
-        images/ruby.png
         images/1st.png
         images/2nd.png
         images/3rd.png
+        images/trophy.png
+        images/progress_graph.png
+        images/laptop.png
+        images/matchmaking.png
+        images/Ruby.png
+        images/rocket.gif
         QML_FILES CodeEditor.qml
         SOURCES Highlighter.h
         QML_FILES Login.qml
