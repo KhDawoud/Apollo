@@ -10,7 +10,7 @@ Window {
     visible: true
     title: qsTr("Apollo")
     visibility: Window.Maximized
-    property bool isLoggedIn: true
+    property bool isLoggedIn: fa
 
     Rectangle {
         id: masterBackground
