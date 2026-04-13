@@ -31,6 +31,21 @@ Rectangle {
                 // need to show this error next
             }
         }
+        Button {
+            text: "← Back to Home"
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.margins: 20
+            
+            onClicked: mainNavBar.currentIndex = 0 // Back to Home
+
+            background: Rectangle { color: "transparent" }
+            contentItem: Text {
+                text: parent.text
+                color: "#4CC9FE"
+                font.pointSize: 12
+            }
+        }
 
         Text {
             id: loginTitle
