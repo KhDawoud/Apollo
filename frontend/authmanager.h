@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
+#include <QString>
 
 class AuthManager : public QObject
 {
@@ -11,15 +12,20 @@ class AuthManager : public QObject
 public:
     explicit AuthManager(QObject *parent = nullptr);
 
-    // Q_INVOKABLE so it can be used directly in the code
+    // Q_INVOKABLE makes these callable directly from QML
     Q_INVOKABLE void login(const QString &username, const QString &password);
+    Q_INVOKABLE void signup(const QString &email, const QString &username, const QString &password);
 
 signals:
     void loginSuccess(int totalXp);
-    void loginFailed(QString errorMessage);
+    void loginFailed(const QString &errorMessage);
+
+    void signupSuccess(int totalXp);
+    void signupFailed(const QString &errorMessage);
 
 private slots:
-    void onReplyFinished(QNetworkReply *reply);
+    void onLoginReply(QNetworkReply *reply);
+    void onSignupReply(QNetworkReply *reply);
 
 private:
     QNetworkAccessManager *networkManager;

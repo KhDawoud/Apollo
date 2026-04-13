@@ -5,49 +5,52 @@ import QtQuick.Layouts
 Rectangle {
     id: loginPage
     color: "transparent"
+
     Rectangle {
         id: loginRoot
         anchors.fill: parent
         color: "transparent"
+
         Connections {
             target: authManager
 
             function onLoginSuccess(totalXp) {
-                console.log("Logged in! User XP: " + totalXp)
-                loginBtn.enabled = true
-                loginBtn.text = "LOGIN"
+                console.log("Logged in! User XP: " + totalXp);
+                loginBtn.enabled = true;
+                loginBtn.text = "LOGIN";
 
-                isLoggedIn = true
-                mainNavBar.currentIndex = 0 // Redirect to Home
+                isLoggedIn = true;
+                mainNavBar.currentIndex = 0; // sends you home after logging you in
             }
 
             function onLoginFailed(errorMessage) {
-                console.log("Login Failed: " + errorMessage)
-                loginBtn.enabled = true
-                loginBtn.text = "LOGIN"
+                console.log("Login Failed: " + errorMessage);
+                loginBtn.enabled = true;
+                loginBtn.text = "LOGIN";
 
-                // Optionally, show this errorMessage in a Text element on screen
+                // need to show this error next
             }
         }
+
         Text {
-        id: loginTitle
-        text: "SIGN IN"
-        anchors.top: parent.top
-        anchors.topMargin: parent.height * 0.05
-        anchors.horizontalCenter: parent.horizontalCenter
-        font.bold: true
-        font.pointSize: 40
-        color: "white"
+            id: loginTitle
+            text: "SIGN IN"
+            anchors.top: parent.top
+            anchors.topMargin: parent.height * 0.05
+            anchors.horizontalCenter: parent.horizontalCenter
+            font.bold: true
+            font.pointSize: 40
+            color: "white"
         }
+
         Rectangle {
             id: loginBox
-
             width: 450
             height: 550
             anchors.top: loginTitle.bottom
             anchors.topMargin: 30
             anchors.horizontalCenter: parent.horizontalCenter
-            color: Qt.rgba(17/255, 45/255, 78/255, 0.5)
+            color: Qt.rgba(17 / 255, 45 / 255, 78 / 255, 0.5)
             radius: 20
             border.color: "#4CC9FE"
             border.width: 2
@@ -70,11 +73,16 @@ Rectangle {
                 ColumnLayout {
                     spacing: 8
                     Layout.fillWidth: true
-                    Text { text: "USERNAME"; color: "#DBE2EF"; font.pointSize: 10; font.bold: true }
+                    Text {
+                        text: "USERNAME OR EMAIL"
+                        color: "#DBE2EF"
+                        font.pointSize: 10
+                        font.bold: true
+                    }
 
                     TextField {
                         id: userField
-                        placeholderText: "Enter your username"
+                        placeholderText: "Enter your username or email"
                         Layout.fillWidth: true
                         Layout.preferredHeight: 50
                         leftPadding: 15
@@ -94,7 +102,12 @@ Rectangle {
                 ColumnLayout {
                     spacing: 8
                     Layout.fillWidth: true
-                    Text { text: "PASSWORD"; color: "#DBE2EF"; font.pointSize: 10; font.bold: true }
+                    Text {
+                        text: "PASSWORD"
+                        color: "#DBE2EF"
+                        font.pointSize: 10
+                        font.bold: true
+                    }
 
                     TextField {
                         id: passField
@@ -136,32 +149,36 @@ Rectangle {
                         color: loginBtn.down ? "#c23a13" : (loginBtn.hovered ? "#f05629" : "#444444")
                         radius: 10
 
-                        Behavior on color { ColorAnimation { duration: 100 } }
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: 100
+                            }
+                        }
                     }
 
                     onClicked: {
-                        loginBtn.enabled = false
-                        loginBtn.text = "LOGGING IN..."
-                        authManager.login(userField.text, passField.text)
+                        loginBtn.enabled = false;
+                        loginBtn.text = "LOGGING IN...";
+                        authManager.login(userField.text, passField.text);
                     }
                 }
+
                 RowLayout {
-                    Layout.alignment: Qt.AlignHCenter 
-                    spacing: 20 
+                    Layout.alignment: Qt.AlignHCenter
+                    spacing: 20
 
                     Text {
                         text: "Create an account"
                         color: "#DBE2EF"
                         font.pointSize: 10
-                        
+
                         MouseArea {
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
-                            
+
                             onClicked: {
-                                console.log("Navigating to Sign Up page...")
-                                // This changes the page to index 5
-                                mainNavBar.currentIndex = 5 
+                                console.log("Navigating to Sign Up page...");
+                                mainNavBar.currentIndex = 5;
                             }
                         }
                     }
