@@ -285,8 +285,8 @@ Rectangle {
                                spacing: 15
                                Image {
                                    source: iconPath
-                                   width: 100
-                                   height: 100
+                                   width: 80
+                                   height: 80
                                    anchors.horizontalCenter: parent.horizontalCenter
                                    fillMode: Image.PreserveAspectFit
                                }
