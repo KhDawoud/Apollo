@@ -10,7 +10,7 @@ Window {
     visible: true
     title: qsTr("Apollo")
     visibility: Window.Maximized
-    property bool isLoggedIn: false
+    property bool isLoggedIn: true
 
     Rectangle {
         id: masterBackground
@@ -71,7 +71,7 @@ Window {
             anchors.left: apollologo.right
             width: implicitWidth
             // --- FIX 2: Anchor the right side to the profile button to prevent overlap ---
-            anchors.right: isLoggedIn? profileButton.left :profilearea.left
+            anchors.right: profilearea.left
 
             anchors.verticalCenter: parent.verticalCenter
             anchors.leftMargin: 30
