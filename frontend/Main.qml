@@ -51,8 +51,9 @@ Window {
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
-        height: 80
         color: "transparent"
+        visible: mainstacklayout.currentIndex < 4 
+        height: visible ? 80 : 0
 
         Image {
             id: apollologo
@@ -81,7 +82,7 @@ Window {
             onCurrentIndexChanged: {
                 if (!isLoggedIn && (currentIndex === 1 || currentIndex === 2|| currentIndex === 3)) {
                     console.log("Access denied. Please log in.")
-                    currentIndex = 4 
+                    currentIndex = 6 
                 }
             }
 
@@ -279,6 +280,7 @@ Window {
                             onClicked:{
                                 profileMenu.close()
                                 isLoggedIn = false
+                                mainNavBar.currentIndex = 0
                             }
                             contentItem: Text {
                                 text: qsTr("Log Out")
@@ -337,6 +339,7 @@ Window {
         }
     }
     StackLayout {
+        id: mainstacklayout
         anchors.top: header.bottom
         anchors.left: parent.left
         anchors.right: parent.right
@@ -365,5 +368,7 @@ Window {
         Login{}
         //Index 5: Signup
         Signup{}
+        //Index 6: Welcome
+        Welcome{}
     }
 }
