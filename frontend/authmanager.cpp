@@ -1,4 +1,5 @@
 #include "authmanager.h"
+#include "utils.hpp"
 #include <QNetworkRequest>
 #include <QUrl>
 #include <QJsonObject>
@@ -58,6 +59,25 @@ void AuthManager::signup(const QString &email, const QString &username, const QS
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
+    // Email validity check 
+    try{
+        checkemail(email.toStdString());
+    }catch(const std::invalid_argument& e){
+        emit signupFailed("Invalid email format. Please check your email address.");
+        return;
+    }
+
+    //Username length check
+    if (username.length() < 4) {
+        emit signupFailed("Username must be at least 4 characters long.");
+        return;
+    }
+
+    // Password length check
+    if (password.length() < 8) {
+        emit signupFailed("Password must be at least 8 characters long.");
+        return;
+    }
     QJsonObject json;
     json["email"] = email;
     json["username"] = username;
@@ -65,7 +85,6 @@ void AuthManager::signup(const QString &email, const QString &username, const QS
     QJsonDocument doc(json);
 
     QNetworkReply *reply = networkManager->post(request, doc.toJson());
-
     connect(reply, &QNetworkReply::finished, this, [this, reply]()
             { onSignupReply(reply); });
 }

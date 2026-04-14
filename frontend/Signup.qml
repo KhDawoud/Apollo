@@ -7,6 +7,7 @@ Rectangle {
     anchors.fill: parent
     color: "transparent"
     anchors.bottomMargin: 50
+    property string currentError: ""
 
     Connections {
         target: authManager
@@ -24,10 +25,11 @@ Rectangle {
             console.log("Signup Failed: " + errorMessage);
             signupBtn.enabled = true;
             signupBtn.text = "SIGN UP";
-            // we need to actually display these errors next
+            currentError= errorMessage;
         }
     }
-        Button {
+    //back button to be able to traverse back to home as the tabbar is not shown
+    Button {
         text: "← Back to Home"
         anchors.top: parent.top
         anchors.left: parent.left
@@ -57,11 +59,11 @@ Rectangle {
     Rectangle {
         id: signupBox
         width: 450
-        height: 600
+        height: signupColumn.implicitHeight + 80 //so that the error lines can fit
         anchors.top: signupTitle.bottom
         anchors.topMargin: 30
         anchors.horizontalCenter: parent.horizontalCenter
-        color: Qt.rgba(17 / 255, 45 / 255, 78 / 255, 0.5)
+        color: Qt.rgba(17 / 255, 45 / 255, 78 / 255, 0.5) // makes the box have 50% opacity
         radius: 20
         border.color: "#4CC9FE"
         border.width: 2
@@ -81,7 +83,7 @@ Rectangle {
                 Layout.bottomMargin: 5
             }
 
-            // added email bardo
+            // Email input field
             ColumnLayout {
                 spacing: 4
                 Layout.fillWidth: true
@@ -106,8 +108,20 @@ Rectangle {
                     }
                 }
             }
+            //Error message if email is invalid
+            Text {
+                id: emailerror
+                text: currentError.toLowerCase().includes("email") ? currentError : "" 
+                color: "#FF4C4C" 
+                font.pointSize: 10
+                font.bold: true
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+                horizontalAlignment: Text.AlignHCenter
+                visible: text !== "" 
+            }
 
-            // Username Input
+            // Username input field
             ColumnLayout {
                 spacing: 4
                 Layout.fillWidth: true
@@ -131,6 +145,17 @@ Rectangle {
                         border.color: userField.activeFocus ? "#4CC9FE" : "#DBE2EF"
                     }
                 }
+            }
+            Text {
+                id: usernameerror
+                text: currentError.toLowerCase().includes("username") ? currentError : "" 
+                color: "#FF4C4C" 
+                font.pointSize: 10
+                font.bold: true
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+                horizontalAlignment: Text.AlignHCenter
+                visible: text !== "" 
             }
 
             // Password Input
@@ -158,6 +183,18 @@ Rectangle {
                         border.color: passField.activeFocus ? "#4CC9FE" : "#DBE2EF"
                     }
                 }
+            }
+            //Error message if password is less than 8 characters
+            Text {
+                id: passworderror
+                text: currentError.toLowerCase().includes("password") ? currentError : "" 
+                color: "#FF4C4C" 
+                font.pointSize: 10
+                font.bold: true
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+                horizontalAlignment: Text.AlignHCenter
+                visible: text !== "" 
             }
 
             // Confirm Password
@@ -215,13 +252,14 @@ Rectangle {
                 }
 
                 onClicked: {
+                    currentError = "";
                     signupBtn.text = "CREATING...";
                     signupBtn.enabled = false;
                     authManager.signup(emailField.text, userField.text, passField.text);
                 }
             }
 
-            // Footer Link
+            // Footer link that allows you to go login 
             Text {
                 text: "Already have an Account? Log In"
                 color: "#DBE2EF"
