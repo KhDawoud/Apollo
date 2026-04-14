@@ -4,47 +4,9 @@ import QtQuick.Layouts
 
 Rectangle {
     id: problemsRoot
-    color: "#000015"
-    anchors.fill: parent
     property int selectedIndex: -1
-
-    Item {
-        id: starfield
-        anchors.fill: parent
-
-        Repeater {
-            model: 150
-            Rectangle {
-                property int animDuration: Math.random() * 5000 + 1000
-
-                x: Math.random() * starfield.width
-                y: Math.random() * starfield.height
-                width: Math.random() * 3 + 1
-                height: width
-                radius: width / 2
-                color: "#D7D7D7"
-
-                opacity: Math.random()
-
-                SequentialAnimation on opacity {
-                    loops: Animation.Infinite
-                    running: true
-
-                    NumberAnimation {
-                        to: 1.0
-                        duration: animDuration
-                        easing.type: Easing.InOutSine
-                    }
-
-                    NumberAnimation {
-                        to: 0.1
-                        duration: animDuration
-                        easing.type: Easing.InOutSine
-                    }
-                }
-            }
-        }
-    }
+    color: "transparent"
+    signal languageChosen(string langName)
 
     Text {
         id: titleText
@@ -58,6 +20,7 @@ Rectangle {
         font.letterSpacing: 2
     }
 
+    // brand color is for if we'll make it use themes for each language at some point
     ListModel {
         id: languageModel
         ListElement { name: "Python"; iconPath: "images/python.png"; brandColor: "#FFD43B"}
@@ -73,16 +36,15 @@ Rectangle {
     GridView {
         id: languageGrid
         anchors.top: titleText.bottom
-        anchors.topMargin: 50
+        anchors.topMargin: 40
         anchors.bottom: blastOffBtn.top
-        anchors.bottomMargin: 30
+        anchors.bottomMargin: 40
         anchors.horizontalCenter: parent.horizontalCenter
 
-        width: cellWidth * 4
+        width: Math.min(cellWidth * 4, cellWidth * Math.floor((parent.width - 40) / cellWidth))
         cellWidth: 160
         cellHeight: 180
         clip: true
-
         model: languageModel
 
         delegate: Item {
@@ -96,7 +58,6 @@ Rectangle {
                 height: 150
                 color: problemsRoot.selectedIndex === index ? "#3F72AF" : "#112D4E"
                 radius: 15
-
                 border.width: problemsRoot.selectedIndex === index ? 3 : 1
                 border.color: problemsRoot.selectedIndex === index ? "white" : "#335b8c"
 
@@ -127,7 +88,6 @@ Rectangle {
                     anchors.fill: parent
                     hoverEnabled: true
                     onClicked: problemsRoot.selectedIndex = index
-
                     onEntered: card.scale = 1.05
                     onExited: card.scale = 1.0
                 }
@@ -140,12 +100,16 @@ Rectangle {
     Button {
         id: blastOffBtn
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: 60
+        anchors.bottomMargin: 40
         anchors.horizontalCenter: parent.horizontalCenter
         width: 250
         height: 60
-
         enabled: problemsRoot.selectedIndex !== -1
+
+        onClicked: {
+            var langName = languageModel.get(problemsRoot.selectedIndex).name
+            problemsRoot.languageChosen(langName)
+        }
 
         contentItem: Text {
             text: qsTr("BLAST OFF 🚀")
@@ -161,9 +125,7 @@ Rectangle {
         background: Rectangle {
             radius: 30
             color: blastOffBtn.enabled ? (blastOffBtn.pressed ? "#c23a13" : (blastOffBtn.hovered ? "#f05629" : "#E25822")) : "#444444"
-
             Behavior on color { ColorAnimation { duration: 150 } }
         }
-
     }
 }
