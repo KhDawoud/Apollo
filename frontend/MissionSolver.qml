@@ -7,6 +7,7 @@ Rectangle {
     id: solvingPage
     color: "transparent"
 
+    //a dummy problem for now, this will eventually be populated from the database
     property string language: "Unknown"
     property string missionName: "Array Traversal & State Tracking"
     property string missionDescription: "In this mission, you need to traverse the given array and track the state of the system modules. \n\nWrite a function that returns true if all primary thrusters are operational, otherwise return false. Optimize your solution to run in O(n) time.\n\nExample Input: [1, 1, 0, 1]\nExpected Output: false"
@@ -63,6 +64,7 @@ Rectangle {
             }
         }
 
+        // my custom code editor and syntax highlighter instead of a text box
         CodeEditor {
             id: myCodeEditor
             Layout.fillWidth: true

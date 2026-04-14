@@ -12,82 +12,188 @@ Rectangle {
     property string sortKey: "name"
     property bool sortAscending: true
 
+    // Once we generate the data we need all these will be populated with the
+    // data from the DB but this is just dummy data to showcase it working
     ListModel {
         id: topicModel
-        ListElement { name: "All" }
-        ListElement { name: "Arrays" }
-        ListElement { name: "Strings" }
-        ListElement { name: "Algorithms" }
-        ListElement { name: "Graphs" }
-        ListElement { name: "DP" }
-        ListElement { name: "OOP" }
+        ListElement {
+            name: "All"
+        }
+        ListElement {
+            name: "Arrays"
+        }
+        ListElement {
+            name: "Strings"
+        }
+        ListElement {
+            name: "Algorithms"
+        }
+        ListElement {
+            name: "Graphs"
+        }
+        ListElement {
+            name: "DP"
+        }
+        ListElement {
+            name: "OOP"
+        }
     }
 
     ListModel {
         id: difficultyModel
-        ListElement { name: "All" }
-        ListElement { name: "Easy" }
-        ListElement { name: "Medium" }
-        ListElement { name: "Hard" }
+        ListElement {
+            name: "All"
+        }
+        ListElement {
+            name: "Easy"
+        }
+        ListElement {
+            name: "Medium"
+        }
+        ListElement {
+            name: "Hard"
+        }
     }
 
     ListModel {
         id: missionsModel
-        ListElement { name: "Array Traversal & State Tracking"; topic: "Arrays"; difficulty: "Easy"; diffColor: "#10B981" }
-        ListElement { name: "Sliding Window Fundamentals"; topic: "Strings"; difficulty: "Medium"; diffColor: "#F59E0B" }
-        ListElement { name: "Hash Maps for Fast Lookup"; topic: "Algorithms"; difficulty: "Easy"; diffColor: "#10B981" }
-        ListElement { name: "Two Pointers Technique"; topic: "Algorithms"; difficulty: "Medium"; diffColor: "#F59E0B" }
-        ListElement { name: "Recursion Basics"; topic: "Algorithms"; difficulty: "Medium"; diffColor: "#F59E0B" }
-        ListElement { name: "Stack Usage"; topic: "Algorithms"; difficulty: "Medium"; diffColor: "#F59E0B" }
-        ListElement { name: "Queue & BFS"; topic: "Graphs"; difficulty: "Hard"; diffColor: "#EF4444" }
-        ListElement { name: "Binary Search"; topic: "Algorithms"; difficulty: "Easy"; diffColor: "#10B981" }
-        ListElement { name: "Sorting Strategies"; topic: "Algorithms"; difficulty: "Medium"; diffColor: "#F59E0B" }
-        ListElement { name: "Greedy Algorithms"; topic: "Algorithms"; difficulty: "Hard"; diffColor: "#EF4444" }
-        ListElement { name: "Dynamic Programming Intro"; topic: "DP"; difficulty: "Hard"; diffColor: "#EF4444" }
-        ListElement { name: "String Parsing"; topic: "Strings"; difficulty: "Medium"; diffColor: "#F59E0B" }
-        ListElement { name: "Graph Representation"; topic: "Graphs"; difficulty: "Medium"; diffColor: "#F59E0B" }
-        ListElement { name: "Bit Manipulation"; topic: "Algorithms"; difficulty: "Hard"; diffColor: "#EF4444" }
-        ListElement { name: "Object Modeling"; topic: "OOP"; difficulty: "Medium"; diffColor: "#F59E0B" }
+        ListElement {
+            name: "Array Traversal & State Tracking"
+            topic: "Arrays"
+            difficulty: "Easy"
+            diffColor: "#10B981"
+        }
+        ListElement {
+            name: "Sliding Window Fundamentals"
+            topic: "Strings"
+            difficulty: "Medium"
+            diffColor: "#F59E0B"
+        }
+        ListElement {
+            name: "Hash Maps for Fast Lookup"
+            topic: "Algorithms"
+            difficulty: "Easy"
+            diffColor: "#10B981"
+        }
+        ListElement {
+            name: "Two Pointers Technique"
+            topic: "Algorithms"
+            difficulty: "Medium"
+            diffColor: "#F59E0B"
+        }
+        ListElement {
+            name: "Recursion Basics"
+            topic: "Algorithms"
+            difficulty: "Medium"
+            diffColor: "#F59E0B"
+        }
+        ListElement {
+            name: "Stack Usage"
+            topic: "Algorithms"
+            difficulty: "Medium"
+            diffColor: "#F59E0B"
+        }
+        ListElement {
+            name: "Queue & BFS"
+            topic: "Graphs"
+            difficulty: "Hard"
+            diffColor: "#EF4444"
+        }
+        ListElement {
+            name: "Binary Search"
+            topic: "Algorithms"
+            difficulty: "Easy"
+            diffColor: "#10B981"
+        }
+        ListElement {
+            name: "Sorting Strategies"
+            topic: "Algorithms"
+            difficulty: "Medium"
+            diffColor: "#F59E0B"
+        }
+        ListElement {
+            name: "Greedy Algorithms"
+            topic: "Algorithms"
+            difficulty: "Hard"
+            diffColor: "#EF4444"
+        }
+        ListElement {
+            name: "Dynamic Programming Intro"
+            topic: "DP"
+            difficulty: "Hard"
+            diffColor: "#EF4444"
+        }
+        ListElement {
+            name: "String Parsing"
+            topic: "Strings"
+            difficulty: "Medium"
+            diffColor: "#F59E0B"
+        }
+        ListElement {
+            name: "Graph Representation"
+            topic: "Graphs"
+            difficulty: "Medium"
+            diffColor: "#F59E0B"
+        }
+        ListElement {
+            name: "Bit Manipulation"
+            topic: "Algorithms"
+            difficulty: "Hard"
+            diffColor: "#EF4444"
+        }
+        ListElement {
+            name: "Object Modeling"
+            topic: "OOP"
+            difficulty: "Medium"
+            diffColor: "#F59E0B"
+        }
     }
 
-    ListModel { id: filteredModel }
+    ListModel {
+        id: filteredModel
+    }
 
+    // qml uses javascript so the sorting functions are written in JS.
+    // might move these funcs to a .cpp file which I expose to this qml later
     function rebuildModel() {
-        let temp = []
+        let temp = [];
         for (let i = 0; i < missionsModel.count; i++) {
-            let item = missionsModel.get(i)
-            if ((selectedTopic === "All" || item.topic === selectedTopic) &&
-                (selectedDifficulty === "All" || item.difficulty === selectedDifficulty)) {
-
+            let item = missionsModel.get(i);
+            if ((selectedTopic === "All" || item.topic === selectedTopic) && (selectedDifficulty === "All" || item.difficulty === selectedDifficulty)) {
                 temp.push({
                     name: item.name,
                     topic: item.topic,
                     difficulty: item.difficulty,
                     diffColor: item.diffColor
-                })
+                });
             }
         }
 
-        temp.sort(function(a, b) {
-            let valA = a[sortKey]
-            let valB = b[sortKey]
+        temp.sort(function (a, b) {
+            let valA = a[sortKey];
+            let valB = b[sortKey];
 
             if (sortKey === "difficulty") {
-                const order = { "Easy": 1, "Medium": 2, "Hard": 3 }
-                valA = order[valA]
-                valB = order[valB]
-                return sortAscending ? valA - valB : valB - valA
+                const order = {
+                    "Easy": 1,
+                    "Medium": 2,
+                    "Hard": 3
+                };
+                valA = order[valA];
+                valB = order[valB];
+                return sortAscending ? valA - valB : valB - valA;
             }
 
-            let result = String(valA).localeCompare(String(valB))
-            return sortAscending ? result : -result
-        })
+            let result = String(valA).localeCompare(String(valB));
+            return sortAscending ? result : -result;
+        });
 
-        filteredModel.clear()
+        filteredModel.clear();
         for (let i = 0; i < temp.length; i++)
-            filteredModel.append(temp[i])
+            filteredModel.append(temp[i]);
     }
 
+    //these are the property observers for our filtering choices
     onSelectedTopicChanged: rebuildModel()
     onSelectedDifficultyChanged: rebuildModel()
     onSortKeyChanged: rebuildModel()
@@ -104,7 +210,9 @@ Rectangle {
         Button {
             text: "← Back"
             onClicked: problemsPage.StackView.view.pop()
-            background: Rectangle { color: "transparent" }
+            background: Rectangle {
+                color: "transparent"
+            }
             contentItem: Text {
                 text: parent.text
                 color: "#94A3B8"
@@ -182,8 +290,8 @@ Rectangle {
                                 hoverEnabled: true
 
                                 onClicked: {
-                                    selectedTopic = model.name
-                                    topicMenu.close()
+                                    selectedTopic = model.name;
+                                    topicMenu.close();
                                 }
 
                                 contentItem: Text {
@@ -249,8 +357,8 @@ Rectangle {
                                 hoverEnabled: true
 
                                 onClicked: {
-                                    selectedDifficulty = model.name
-                                    difficultyMenu.close()
+                                    selectedDifficulty = model.name;
+                                    difficultyMenu.close();
                                 }
 
                                 contentItem: Text {
@@ -269,7 +377,9 @@ Rectangle {
                 }
             }
 
-            Item { Layout.fillWidth: true }
+            Item {
+                Layout.fillWidth: true
+            }
         }
     }
 
@@ -342,10 +452,10 @@ Rectangle {
                             cursorShape: Qt.PointingHandCursor
                             onClicked: {
                                 if (sortKey === "topic")
-                                    sortAscending = !sortAscending
+                                    sortAscending = !sortAscending;
                                 else {
-                                    sortKey = "topic"
-                                    sortAscending = true
+                                    sortKey = "topic";
+                                    sortAscending = true;
                                 }
                             }
                         }
@@ -378,10 +488,10 @@ Rectangle {
                             cursorShape: Qt.PointingHandCursor
                             onClicked: {
                                 if (sortKey === "difficulty")
-                                    sortAscending = !sortAscending
+                                    sortAscending = !sortAscending;
                                 else {
-                                    sortKey = "difficulty"
-                                    sortAscending = true
+                                    sortKey = "difficulty";
+                                    sortAscending = true;
                                 }
                             }
                         }
@@ -416,7 +526,7 @@ Rectangle {
                             problemsPage.StackView.view.push("MissionExplanation.qml", {
                                 "missionName": model.name,
                                 "language": problemsPage.language
-                            })
+                            });
                         }
                     }
 

@@ -2,6 +2,13 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
+// Initially I planned to use import a code edtior QT widget but I faced a lot of issues trying to work a 
+// QtWidget into a QML app so after trying multiple other approaches (like using a QWebeEngine to get one from
+//online), I just decided I'd make a simple CodeEditor component myself
+
+// A lot of the implementation logic was heavily aided with AI since my javascript and regex isn't great
+// and I wouldn't have time to learn all of it.
+
 Rectangle {
     id: root
     color: "#1E1E1E"
