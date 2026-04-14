@@ -20,6 +20,7 @@ Rectangle {
         font.letterSpacing: 2
     }
 
+    // brand color is for if we'll make it use themes for each language at some point
     ListModel {
         id: languageModel
         ListElement { name: "Python"; iconPath: "images/python.png"; brandColor: "#FFD43B"}

@@ -9,6 +9,11 @@
 #include <QQuickTextDocument>
 #include <QMap>
 
+// this builds on the syntaxhighlighter already in Qt to add support for other languages
+
+// A lot of the implementation logic was heavily aided with AI since it requires lots of advanced
+// regex and getting keywords words for 8 different language so I wouldn't have time to learn all of it.
+
 class AdvancedHighlighter : public QSyntaxHighlighter {
 public:
     AdvancedHighlighter(const QString &language, QTextDocument *parent = nullptr)
