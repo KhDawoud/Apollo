@@ -32,7 +32,7 @@ Rectangle {
             height: parent.height
             width: parent.width - 280
 
-            color: Qt.rgba(17/255, 45/255, 78/255, 0.5) // 50% opacity
+            color: Qt.rgba(17/255, 45/255, 78/255, 0.5) // makes the box have 50% opacity
             radius: 20
             border.color: "#3F72AF"
             border.width: 2
@@ -40,7 +40,6 @@ Rectangle {
                 id: filterBar
                 spacing: 20
 
-                // --- POSITIONING ---
                 anchors.bottom: parent.top
                 anchors.left: parent.left
                 anchors.leftMargin: 10
@@ -92,7 +91,7 @@ Rectangle {
                     x = filterBar.showingFriends ? (filterBar.x + friendsTab.x) : (filterBar.x + globalTab.x)
                 }
             }
-            // --- Column Headers ---
+            //Column Headers rank,streak and score
             RowLayout {
                 id: headerRow
                 anchors.top: parent.top
@@ -163,12 +162,9 @@ Rectangle {
                 id:list
                 anchors.top: headerRow.bottom
                 anchors.left: parent.left
-                    anchors.right: parent.right
-
-
+                anchors.right: parent.right
                 anchors.bottom: parent.bottom
                 anchors.margins: 15
-
 
                 model: filterBar.showingFriends ? friendsModel : globalModel
 
@@ -185,92 +181,93 @@ Rectangle {
                         color: "#3F72AF"
                         radius: 10
                         border.color: "#DBE2EF"
-                    }
-                    contentItem: RowLayout{
-                        anchors.fill: parent
-                        anchors.leftMargin: 20
-                        anchors.rightMargin: 20
-                        spacing: 40
-                        Item {
-                            Layout.preferredWidth: 30
-                            Layout.preferredHeight: 30
+                }
+                contentItem: RowLayout{
+                    anchors.fill: parent
+                    anchors.leftMargin: 20
+                    anchors.rightMargin: 20
+                    spacing: 40
+                    Item {
+                        Layout.preferredWidth: 30
+                        Layout.preferredHeight: 30
 
-                            Image {
-                                anchors.centerIn: parent
-                                width: 60
-                                height: 60
-                                fillMode: Image.PreserveAspectFit
-                                // Show images for index 0, 1, 2
-                                visible: index <= 2
-                                source: {
-                                    if (index === 0) return "images/1st.png";
-                                    if (index === 1) return "images/2nd.png";
-                                    if (index === 2) return "images/3rd.png";
-                                    return "";
-                                }
+                        Image {
+                            anchors.centerIn: parent
+                            width: 60
+                            height: 60
+                            fillMode: Image.PreserveAspectFit
+                            // Show images for index 0, 1, 2
+                            visible: index <= 2
+                            source: {
+                                if (index === 0) return "images/1st.png";
+                                if (index === 1) return "images/2nd.png";
+                                if (index === 2) return "images/3rd.png";
+                                return "";
                             }
+                        }
 
-                            Text { //Rank
-                                anchors.centerIn: parent
-                                // Show number only for index 3 and above
-                                visible: index > 2
-                                text: index + 1
+                        Text { //Rank
+                            anchors.centerIn: parent
+                            // Show number only for index 3 and above
+                            visible: index > 2
+                            text: index + 1
+                            color: "white"
+                            font.pointSize: 14
+                            font.bold: true
+                        }
+                    }
+                    Text{ //Name
+                        text: name
+                        color:{
+                            if(index+1==1)
+                                return "#C9B037"
+                            if(index+1==2)
+                                return "#D7D7D7"
+                            if(index+1==3)
+                                return "#CE8946"
+                            return "white"
+                        }
+                        font.pointSize: 14
+                        font.bold: true
+                        Layout.fillWidth: true
+                    }
+
+                    Item {
+                        Layout.preferredWidth: 100
+                        height: parent.height
+
+                        Row {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: 2
+
+                            Text {
+                                text: model.streak
+                                font.pointSize: 16
                                 color: "white"
-                                font.pointSize: 14
                                 font.bold: true
+                                verticalAlignment: Text.AlignVCenter
                             }
+                            Text {
+                                text: "🔥"
+                                font.pointSize: 14
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                        }
                     }
-                        Text{ //Name
-                            text: name
-                            color:{
-                                if(index+1==1)
-                                    return "#C9B037"
-                                if(index+1==2)
-                                    return "#D7D7D7"
-                                if(index+1==3)
-                                    return "#CE8946"
-                                return "white"
-                            }
-                            font.pointSize: 14
-                            font.bold: true
-                            Layout.fillWidth: true
-                        }
-
-                        Item {
-                            Layout.preferredWidth: 100
-                            height: parent.height
-
-                            Row {
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                anchors.verticalCenter: parent.verticalCenter
-                                spacing: 2
-
-                                Text {
-                                    text: model.streak
-                                    font.pointSize: 16
-                                    color: "white"
-                                    font.bold: true
-                                    verticalAlignment: Text.AlignVCenter
-                                }
-                                Text {
-                                    text: "🔥"
-                                    font.pointSize: 14
-                                    verticalAlignment: Text.AlignVCenter
-                                }
-                            }
-                        }
-                        Text { //Score
-                            text: score
-                            font.bold: true
-                            font.pointSize: 14
-                            color: "#BEE3F8"
-                            horizontalAlignment: Text.AlignRight
-                            Layout.preferredWidth: 100
-                        }
+                    Text { //Score
+                        text: score
+                        font.bold: true
+                        font.pointSize: 14
+                        color: "#BEE3F8"
+                        horizontalAlignment: Text.AlignRight
+                        Layout.preferredWidth: 100
+                    }
                     }
                 }
             }
         }
+        //My stats area
         Rectangle {
             id: statsCard
             width: 250
@@ -297,7 +294,7 @@ Rectangle {
                     bottomPadding: 10
                 }
 
-                // --- BOX 1: RANK ---
+                // Rank Box
                 Rectangle {
                     width: parent.width
                     height: 70
@@ -314,7 +311,7 @@ Rectangle {
                     }
                 }
 
-                // --- BOX 2: SCORE ---
+                // Score Box
                 Rectangle {
                     width: parent.width
                     height: 70
@@ -331,7 +328,7 @@ Rectangle {
                     }
                 }
 
-                // --- BOX 3: STREAK ---
+                // Streak Box
                 Rectangle {
                     width: parent.width
                     height: 70
@@ -352,7 +349,7 @@ Rectangle {
                     }
                 }
 
-                // --- BOX 4: XP PROGRESS ---
+                //Progress Bar Box
                 Rectangle {
                     width: parent.width
                     height: 70

@@ -7,6 +7,7 @@ Rectangle {
     anchors.fill: parent
     color: "transparent"
 
+    //back button to be able to traverse back to home as the tabbar is not shown
     Button {
         text: "← Back to Home"
         anchors.top: parent.top
@@ -22,9 +23,10 @@ Rectangle {
             font.pointSize: 12
         }
     }
+    //using rowlayout so that the logo and the buttons are next to each other
     RowLayout {
         anchors.centerIn: parent
-        spacing: 80 // Space between the logo and the buttons
+        spacing: 80 
         width: parent.width * 0.85
         height: parent.height * 0.7
 

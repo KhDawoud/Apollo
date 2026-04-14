@@ -31,6 +31,7 @@ Rectangle {
                 // need to show this error next
             }
         }
+        //back button to be able to traverse back to home as the tabbar is not shown
         Button {
             text: "← Back to Home"
             anchors.top: parent.top
@@ -65,7 +66,7 @@ Rectangle {
             anchors.top: loginTitle.bottom
             anchors.topMargin: 30
             anchors.horizontalCenter: parent.horizontalCenter
-            color: Qt.rgba(17 / 255, 45 / 255, 78 / 255, 0.5)
+            color: Qt.rgba(17 / 255, 45 / 255, 78 / 255, 0.5) // makes the box have 50% opacity
             radius: 20
             border.color: "#4CC9FE"
             border.width: 2
@@ -182,6 +183,7 @@ Rectangle {
                     Layout.alignment: Qt.AlignHCenter
                     spacing: 20
 
+                    // Footer link that allows you to signup
                     Text {
                         text: "Create an account"
                         color: "#DBE2EF"
@@ -197,14 +199,14 @@ Rectangle {
                             }
                         }
                     }
-
+                    // seperator betweem the two texts
                     Rectangle {
                         width: 1
                         height: 12
                         color: "#3F72AF"
                         opacity: 0.5
                     }
-
+                    // doesn't do anything for now  
                     Text {
                         text: "Forgot Password?"
                         color: "#DBE2EF"
