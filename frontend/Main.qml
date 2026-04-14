@@ -10,13 +10,15 @@ Window {
     visible: true
     title: qsTr("Apollo")
     visibility: Window.Maximized
-    property bool isLoggedIn: fa
+    //initally user is logged out
+    property bool isLoggedIn: false
 
     Rectangle {
         id: masterBackground
         anchors.fill: parent
         color: "#000015"
-
+        
+        //Star background
         Item {
             id: globalStarfield
             anchors.fill: parent
@@ -70,15 +72,14 @@ Window {
             id: mainNavBar
             anchors.left: apollologo.right
             width: implicitWidth
-            // --- FIX 2: Anchor the right side to the profile button to prevent overlap ---
             anchors.right: profilearea.left
-
             anchors.verticalCenter: parent.verticalCenter
             anchors.leftMargin: 30
             anchors.rightMargin: 20
             spacing: 23
             background: Item {}
             currentIndex: 0
+            // user cant access pages unless he is logged in
             onCurrentIndexChanged: {
                 if (!isLoggedIn && (currentIndex === 1 || currentIndex === 2|| currentIndex === 3)) {
                     console.log("Access denied. Please log in.")
@@ -94,7 +95,6 @@ Window {
                 display: AbstractButton.TextOnly
                 hoverEnabled: true
 
-                // --- FIX 1: Break the loop by sizing based on the text content, not the TabBar ---
                 implicitWidth: Math.max(120, contentItem.implicitWidth + 40)
                 height: 50
 
@@ -124,7 +124,7 @@ Window {
             ApolloTab { text: qsTr("Leaderboard") }
             ApolloTab { text: qsTr("MatchFinder") }
         }
-
+        //Shows profile picture when logged in and shows "Sign in " when logged out
         Item{
             id: profilearea
             width: 120
@@ -172,8 +172,6 @@ Window {
                 z: 10
                 hoverEnabled: true
 
-                // 1. The Dropdown Menu
-                // 1. The Custom Dropdown (No hidden Qt Menu formatting!)
                 Popup {
                     id: profileMenu
                     x: profileButton.width - width + 20
@@ -201,7 +199,7 @@ Window {
                         topPadding: 4
                         bottomPadding: 4
 
-                        // --- Item 1: My Account ---
+                        // My Account button (doesn't do anything for now) 
                         Button {
                             width: parent.width
                             height: 40
@@ -224,7 +222,7 @@ Window {
                             }
                         }
 
-                        // --- Light Gray Separator ---
+                        // Light Gray Separator 
                         Item {
                             width: parent.width
                             height: 11 // 5px top gap + 1px line + 5px bottom gap
@@ -237,7 +235,7 @@ Window {
                             }
                         }
 
-                        // --- Item 2: Settings ---
+                        // Settings button (doesn't do anything for now)
                         Button {
                             width: parent.width
                             height: 40
@@ -259,7 +257,7 @@ Window {
                             }
                         }
 
-                        // --- Light Gray Separator ---
+                        // Light Gray Separator 
                         Item {
                             width: parent.width
                             height: 11 // 5px top gap + 1px line + 5px bottom gap
@@ -272,7 +270,7 @@ Window {
                             }
                         }
 
-                        // --- Item 3: Log Out ---
+                        // Log Out button
                         Button {
                             width: parent.width
                             height: 40
@@ -302,7 +300,6 @@ Window {
                 // Open the menu when the button is clicked
                 onClicked: profileMenu.open()
 
-                // 2. The Custom Profile Picture and Animated Ring
                 background: Item {
                     // The Animated Ring
                     Rectangle {
