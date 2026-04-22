@@ -16,6 +16,28 @@ void AuthManager::login(const QString &username, const QString &password)
     QUrl url("http://localhost:8080/api/login");
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    bool isemail = username.contains('@'); //checks if it is an email or a username
+
+    if(isemail){
+        //checks if email is in correct format
+        try{
+            checkemail(username.toStdString());
+        }catch(const std::invalid_argument& e){
+            emit loginFailed("Invalid email format. Please check your email address.");
+            return;
+        }
+    }else{
+        //Username length check
+        if (username.length() < 4) {
+            emit loginFailed("Username must be at least 4 characters long.");
+            return;
+        }
+    }
+    // Password length check
+    if (password.length() < 8) {
+        emit loginFailed("Password must be at least 8 characters long.");
+        return;
+    }
 
     QJsonObject json;
     json["identifier"] = username;

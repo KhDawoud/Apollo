@@ -5,6 +5,7 @@ import QtQuick.Layouts
 Rectangle {
     id: loginPage
     color: "transparent"
+    property string currentError: ""
 
     Rectangle {
         id: loginRoot
@@ -28,7 +29,7 @@ Rectangle {
                 loginBtn.enabled = true;
                 loginBtn.text = "LOGIN";
 
-                // need to show this error next
+                currentError=errorMessage;
             }
         }
         //back button to be able to traverse back to home as the tabbar is not shown
@@ -85,7 +86,7 @@ Rectangle {
                     Layout.bottomMargin: 10
                 }
 
-                // Username Input
+                // Username or Email Input
                 ColumnLayout {
                     spacing: 8
                     Layout.fillWidth: true
@@ -112,6 +113,18 @@ Rectangle {
                             border.width: 1
                         }
                     }
+                }
+                //Error message if email or username is invalid
+                Text {
+                    id: usererror
+                    text: currentError.toLowerCase().includes("email") || currentError.toLowerCase().includes("username") ? currentError : ""
+                    color: "#FF4C4C"
+                    font.pointSize: 10
+                    font.bold: true
+                    wrapMode: Text.WordWrap
+                    Layout.fillWidth: true
+                    horizontalAlignment: Text.AlignHCenter
+                    visible: text !== ""
                 }
 
                 // Password Input
@@ -142,6 +155,18 @@ Rectangle {
                             border.width: 1
                         }
                     }
+                }
+                //Error message if email or username is invalid
+                Text {
+                    id: passworderror
+                    text: currentError.toLowerCase().includes("password") ? currentError : ""
+                    color: "#FF4C4C"
+                    font.pointSize: 10
+                    font.bold: true
+                    wrapMode: Text.WordWrap
+                    Layout.fillWidth: true
+                    horizontalAlignment: Text.AlignHCenter
+                    visible: text !== ""
                 }
 
                 // Login Button
