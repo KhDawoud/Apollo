@@ -6,6 +6,7 @@ Rectangle {
     color: "transparent"
     visible: mainNavBar.currentIndex === 2
 
+
     Text {
         id: titleText
         text: "LEADERBOARD"
@@ -324,7 +325,7 @@ Rectangle {
                         anchors.centerIn: parent
                         width: parent.width - 20
                         Text { text: "TOTAL SCORE"; color: "#DBE2EF"; font.pointSize: 9; font.bold: true }
-                        Text { text: "7,450"; color: "white"; font.pointSize: 20; font.bold: true }
+                        Text { text: userxp; color: "white"; font.pointSize: 20; font.bold: true }
                     }
                 }
 
@@ -343,7 +344,7 @@ Rectangle {
                         Text { text: "WIN STREAK"; color: "#DBE2EF"; font.pointSize: 9; font.bold: true }
                         Row {
                             spacing: 8
-                            Text { text: "7"; color: "white"; font.pointSize: 20; font.bold: true }
+                            Text { text: userstreak; color: "white"; font.pointSize: 20; font.bold: true }
                             Text { text: "🔥"; font.pointSize: 16; anchors.verticalCenter: parent.verticalCenter }
                         }
                     }

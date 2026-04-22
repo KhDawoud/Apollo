@@ -16,9 +16,11 @@ Rectangle {
         Connections {
             target: authManager
 
-            function onLoginSuccess(totalXp) {
+            function onLoginSuccess(totalXp,streak) {
                 console.log("Logged in! User XP: " + totalXp);
                 isProcessing = false;
+                userxp = totalXp;
+                userstreak = streak;
 
                 isLoggedIn = true;
                 mainNavBar.currentIndex = 0; // sends you home after logging you in

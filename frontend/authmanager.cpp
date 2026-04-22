@@ -61,7 +61,8 @@ void AuthManager::onLoginReply(QNetworkReply *reply)
         if (jsonObj["status"].toString() == "success")
         {
             int xp = jsonObj["total_xp"].toInt();
-            emit loginSuccess(xp);
+            int streak = jsonObj["daily_streak"].toInt();
+            emit loginSuccess(xp,streak);
         }
         else
         {
@@ -123,7 +124,8 @@ void AuthManager::onSignupReply(QNetworkReply *reply)
         if (jsonObj["status"].toString() == "success")
         {
             int xp = jsonObj["total_xp"].toInt();
-            emit signupSuccess(xp);
+            int streak = jsonObj["daily_streak"].toInt();
+            emit signupSuccess(xp,streak);
         }
         else
         {

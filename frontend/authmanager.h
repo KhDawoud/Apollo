@@ -17,10 +17,10 @@ public:
     Q_INVOKABLE void signup(const QString &email, const QString &username, const QString &password);
 
 signals:
-    void loginSuccess(int totalXp);
+    void loginSuccess(int totalXp, int streak);
     void loginFailed(const QString &errorMessage);
 
-    void signupSuccess(int totalXp);
+    void signupSuccess(int totalXp, int streak);
     void signupFailed(const QString &errorMessage);
 
 private slots:

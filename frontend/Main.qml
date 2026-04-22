@@ -12,6 +12,8 @@ Window {
     visibility: Window.Maximized
     //initally user is logged out
     property bool isLoggedIn: false
+    property int userxp : 0
+    property int userstreak : 0
 
     Rectangle {
         id: masterBackground
