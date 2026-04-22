@@ -72,7 +72,7 @@ void handle_request(http::request<http::string_body> &req, http::response<http::
             pqxx::nontransaction N(C);
 
             std::string query =
-                "SELECT username, total_xp FROM users WHERE (email = " + N.quote(identifier) +
+                "SELECT username, total_xp, daily_streak FROM users WHERE (email = " + N.quote(identifier) +
                 " OR username = " + N.quote(identifier) + ") " +
                 "AND password_hash = crypt(" + N.quote(raw_password) + ", password_hash);";
 
@@ -84,6 +84,7 @@ void handle_request(http::request<http::string_body> &req, http::response<http::
                 response_json["status"] = "success";
                 response_json["username"] = R[0]["username"].as<std::string>();
                 response_json["total_xp"] = R[0]["total_xp"].as<int>();
+                response_json["daily_streak"] = R[0]["daily_streak"].as<int>();
 
                 res.result(http::status::ok);
                 res.body() = boost::json::serialize(response_json);
@@ -110,7 +111,7 @@ void handle_request(http::request<http::string_body> &req, http::response<http::
                 W.quote(email) + ", " +
                 W.quote(username) + ", " +
                 "crypt(" + W.quote(raw_password) + ", gen_salt('bf'))) " +
-                "RETURNING username, total_xp;";
+                "RETURNING username, total_xp, daily_streak;";
 
             pqxx::result R = W.exec(query);
             W.commit();
@@ -120,6 +121,7 @@ void handle_request(http::request<http::string_body> &req, http::response<http::
             response_json["message"] = "User created";
             response_json["username"] = R[0]["username"].as<std::string>();
             response_json["total_xp"] = R[0]["total_xp"].as<int>();
+            response_json["daily_streak"] = R[0]["daily_streak"].as<int>();
 
             res.result(http::status::created);
             res.body() = boost::json::serialize(response_json);
