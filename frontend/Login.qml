@@ -6,6 +6,7 @@ Rectangle {
     id: loginPage
     color: "transparent"
     property string currentError: ""
+    property bool isProcessing: false
 
     Rectangle {
         id: loginRoot
@@ -17,8 +18,7 @@ Rectangle {
 
             function onLoginSuccess(totalXp) {
                 console.log("Logged in! User XP: " + totalXp);
-                loginBtn.enabled = true;
-                loginBtn.text = "LOGIN";
+                isProcessing = false;
 
                 isLoggedIn = true;
                 mainNavBar.currentIndex = 0; // sends you home after logging you in
@@ -26,8 +26,7 @@ Rectangle {
 
             function onLoginFailed(errorMessage) {
                 console.log("Login Failed: " + errorMessage);
-                loginBtn.enabled = true;
-                loginBtn.text = "LOGIN";
+                isProcessing =false;
 
                 currentError=errorMessage;
             }
@@ -172,7 +171,7 @@ Rectangle {
                 // Login Button
                 Button {
                     id: loginBtn
-                    text: "LOGIN"
+                    text: isProcessing? "LOGGING IN..." : "LOGIN"
                     Layout.fillWidth: true
                     Layout.preferredHeight: 55
                     Layout.topMargin: 15
@@ -196,10 +195,11 @@ Rectangle {
                             }
                         }
                     }
+                    enabled: !isProcessing && userField.text !== "" && passField.text !== ""
 
                     onClicked: {
-                        loginBtn.enabled = false;
-                        loginBtn.text = "LOGGING IN...";
+                        isProcessing = true;
+                        currentError = "";
                         authManager.login(userField.text, passField.text);
                     }
                 }

@@ -8,14 +8,14 @@ Rectangle {
     color: "transparent"
     anchors.bottomMargin: 50
     property string currentError: ""
+    property bool isProcessing: false
 
     Connections {
         target: authManager
 
         function onSignupSuccess(totalXp) {
             console.log("Signup Success! User XP: " + totalXp);
-            signupBtn.enabled = true;
-            signupBtn.text = "SIGN UP";
+            isProcessing = false;
 
             isLoggedIn = true;
             mainNavBar.currentIndex = 0;
@@ -23,8 +23,7 @@ Rectangle {
 
         function onSignupFailed(errorMessage) {
             console.log("Signup Failed: " + errorMessage);
-            signupBtn.enabled = true;
-            signupBtn.text = "SIGN UP";
+            isProcessing = false;
             currentError= errorMessage;
         }
     }
@@ -227,13 +226,13 @@ Rectangle {
             // Signup Button
             Button {
                 id: signupBtn
-                text: "SIGN UP"
+                text: isProcessing ? "CREATING..." : "SIGN UP"
                 Layout.fillWidth: true
                 Layout.preferredHeight: 55
                 Layout.topMargin: 10
 
                 // makes sure you don't submit when it's empty
-                enabled: emailField.text !== "" && userField.text !== "" && passField.text !== "" && passField.text === confirmPassField.text
+                enabled: !isProcessing && emailField.text !== "" && userField.text !== "" && passField.text !== "" && passField.text === confirmPassField.text
 
                 contentItem: Text {
                     text: signupBtn.text
@@ -253,8 +252,7 @@ Rectangle {
 
                 onClicked: {
                     currentError = "";
-                    signupBtn.text = "CREATING...";
-                    signupBtn.enabled = false;
+                    isProcessing = true;
                     authManager.signup(emailField.text, userField.text, passField.text);
                 }
             }
