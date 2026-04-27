@@ -12,8 +12,11 @@ Window {
     visibility: Window.Maximized
     //initally user is logged out
     property bool isLoggedIn: false
+    property string username: ""
     property int userxp : 0
     property int userstreak : 0
+
+    Account { id: myModals }
 
     Rectangle {
         id: masterBackground
@@ -47,8 +50,6 @@ Window {
             }
         }
     }
-
-
 
     Rectangle {
         id: header
@@ -206,8 +207,6 @@ Window {
                             width: parent.width
                             height: 40
                             hoverEnabled: true
-                            onClicked: profileMenu.close() // Close menu when clicked
-
                             contentItem: Text {
                                 text: qsTr("My Account")
                                 color: "#333333"
@@ -216,11 +215,13 @@ Window {
                                 verticalAlignment: Text.AlignVCenter
                                 leftPadding: 15
                             }
-
                             background: Rectangle {
                                 color: parent.hovered ? "#f2f2f2" : "transparent"
                                 radius: 6
-
+                            }
+                            onClicked: {
+                                profileMenu.close()
+                                myModals.openAccount()
                             }
                         }
 
@@ -242,8 +243,6 @@ Window {
                             width: parent.width
                             height: 40
                             hoverEnabled: true
-                            onClicked: profileMenu.close()
-
                             contentItem: Text {
                                 text: qsTr("Settings")
                                 color: "#333333"
@@ -252,10 +251,13 @@ Window {
                                 verticalAlignment: Text.AlignVCenter
                                 leftPadding: 15
                             }
-
                             background: Rectangle {
                                 color: parent.hovered ? "#f2f2f2" : "transparent"
                                 radius: 6
+                            }
+                            onClicked: {
+                                profileMenu.close()
+                                myModals.openSettings()
                             }
                         }
 

@@ -13,11 +13,12 @@ Rectangle {
     Connections {
         target: authManager
 
-        function onSignupSuccess(totalXp,streak) {
+        function onSignupSuccess(totalXp,streak,name) {
             console.log("Signup Success! User XP: " + totalXp);
             isProcessing = false;
             userxp = totalXp;
             userstreak = streak;
+            username = name;
 
             isLoggedIn = true;
             mainNavBar.currentIndex = 0;

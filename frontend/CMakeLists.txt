@@ -54,6 +54,8 @@ qt_add_qml_module(appApollo
         QML_FILES Login.qml
         SOURCES authmanager.h authmanager.cpp
         SOURCES utils.hpp utils.cpp
+        QML_FILES
+        QML_FILES Account.qml
 )
 
 set_target_properties(appApollo PROPERTIES
