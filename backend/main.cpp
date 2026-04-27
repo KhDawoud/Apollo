@@ -126,6 +126,36 @@ void handle_request(http::request<http::string_body> &req, http::response<http::
             res.result(http::status::created);
             res.body() = boost::json::serialize(response_json);
         }
+        else if (req.method() == http::verb::get && req.target() == "/api/leaderboard")
+        {
+                pqxx::connection C(db_url);
+                pqxx::nontransaction N(C);
+
+                // Query for top 10 players by XP
+                std::string query = 
+                    "SELECT username, total_xp, daily_streak FROM users "
+                    "ORDER BY total_xp DESC, username  ASC "
+                    "LIMIT 10;";
+
+                pqxx::result R = N.exec(query);
+
+                boost::json::array users_array;
+                for (auto const &row : R)
+                {
+                    boost::json::object user_obj;
+                    user_obj["username"] = row["username"].as<std::string>();
+                    user_obj["total_xp"] = row["total_xp"].as<int>();
+                    user_obj["daily_streak"] = row["daily_streak"].as<int>();
+                    users_array.push_back(user_obj);
+                }
+
+                boost::json::object response_json;
+                response_json["status"] = "success";
+                response_json["leaderboard"] = users_array;
+
+                res.result(http::status::ok);
+                res.body() = boost::json::serialize(response_json);
+        }
         else
         {
             res.result(http::status::not_found);

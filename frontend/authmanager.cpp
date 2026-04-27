@@ -2,9 +2,9 @@
 #include "utils.hpp"
 #include <QNetworkRequest>
 #include <QUrl>
-#include <QJsonObject>
 #include <QJsonDocument>
 #include <QByteArray>
+#include <QJsonArray>
 
 AuthManager::AuthManager(QObject *parent) : QObject(parent)
 {
@@ -62,7 +62,8 @@ void AuthManager::onLoginReply(QNetworkReply *reply)
         {
             int xp = jsonObj["total_xp"].toInt();
             int streak = jsonObj["daily_streak"].toInt();
-            emit loginSuccess(xp,streak);
+            QString name =  jsonObj["username"].toString();
+            emit loginSuccess(xp,streak,name);
         }
         else
         {
@@ -125,7 +126,8 @@ void AuthManager::onSignupReply(QNetworkReply *reply)
         {
             int xp = jsonObj["total_xp"].toInt();
             int streak = jsonObj["daily_streak"].toInt();
-            emit signupSuccess(xp,streak);
+            QString name =  jsonObj["username"].toString();
+            emit signupSuccess(xp,streak,name);
         }
         else
         {
@@ -138,3 +140,37 @@ void AuthManager::onSignupReply(QNetworkReply *reply)
     }
     reply->deleteLater();
 }
+
+void AuthManager::fetchleaderboard() {
+
+    QNetworkRequest request(QUrl("http://localhost:8080/api/leaderboard"));
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    QNetworkReply *reply = networkManager->get(request);
+
+    connect(reply, &QNetworkReply::finished, this, [=]() {
+        if (reply->error() == QNetworkReply::NoError) {
+            QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
+            QJsonObject obj = doc.object();
+
+            QJsonArray jsonArray = obj["leaderboard"].toArray();
+            QVariantList leaderboardList;
+            for (const QJsonValue &value : jsonArray) {
+                leaderboardList.append(value.toVariant());
+            }
+
+            emit leaderboardReceived(leaderboardList);
+        } else {
+            qDebug() << "Network Error (Leaderboard):" << reply->errorString();
+        }
+        reply->deleteLater();
+    });
+}
+
+
+
+
+
+
+
+
