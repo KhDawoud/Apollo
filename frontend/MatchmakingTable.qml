@@ -3,14 +3,13 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 Rectangle {
-    id: problemsRoot
+    id: matchmakingRoot
     property int selectedIndex: -1
+    signal missionStarted(int languageIndex, int difficulty)
     color: "transparent"
-    signal languageChosen(string langName)
-
     Text {
         id: titleText
-        text: qsTr("SELECT MISSION LANGUAGE")
+        text: qsTr("SELECT MATCH LANGUAGE")
         anchors.top: parent.top
         anchors.topMargin: 40
         anchors.horizontalCenter: parent.horizontalCenter
@@ -36,11 +35,12 @@ Rectangle {
     GridView {
         id: languageGrid
         anchors.top: titleText.bottom
-        anchors.topMargin: 40
-        anchors.bottom: blastOffBtn.top
+        anchors.topMargin: 20
+
         anchors.bottomMargin: 40
         anchors.horizontalCenter: parent.horizontalCenter
 
+        height: contentHeight
         width: Math.min(cellWidth * 4, cellWidth * Math.floor((parent.width - 40) / cellWidth))
         cellWidth: 160
         cellHeight: 180
@@ -56,10 +56,10 @@ Rectangle {
                 anchors.centerIn: parent
                 width: 130
                 height: 150
-                color: problemsRoot.selectedIndex === index ? "#3F72AF" : "#112D4E"
+                color: matchmakingRoot.selectedIndex === index ? "#3F72AF" : "#112D4E"
                 radius: 15
-                border.width: problemsRoot.selectedIndex === index ? 3 : 1
-                border.color: problemsRoot.selectedIndex === index ? "white" : "#335b8c"
+                border.width: matchmakingRoot.selectedIndex === index ? 3 : 1
+                border.color: matchmakingRoot.selectedIndex === index ? "white" : "#335b8c"
 
                 Behavior on color { ColorAnimation { duration: 150 } }
 
@@ -87,7 +87,7 @@ Rectangle {
                 MouseArea {
                     anchors.fill: parent
                     hoverEnabled: true
-                    onClicked: problemsRoot.selectedIndex = index
+                    onClicked: matchmakingRoot.selectedIndex = index
                     onEntered: card.scale = 1.05
                     onExited: card.scale = 1.0
                 }
@@ -96,23 +96,69 @@ Rectangle {
             }
         }
     }
+    Text {
+        id: titleText2
+        text: qsTr("SELECT MATCH DIFFICULTY")
+        anchors.top: languageGrid.bottom
+        anchors.horizontalCenter: parent.horizontalCenter
+         anchors.topMargin: 20
+        font.bold: true
+        font.pointSize: 24
+        color: "white"
+        font.letterSpacing: 2
+    }
+    Row {
+        id: difficultyRow
+        anchors.top: titleText2.bottom
+        anchors.topMargin: 20
+        anchors.horizontalCenter: parent.horizontalCenter
+        spacing: 15
+
+        property int selectedDiff: -1 // 0: Easy, 1: Med, 2: Hard
+
+        Repeater {
+            model: ["EASY", "MEDIUM", "HARD"]
+            delegate: Rectangle {
+                width: 120
+                height: 45
+                radius: 8
+                color: difficultyRow.selectedDiff === index ? "#3F72AF" : "#112D4E"
+                border.color: difficultyRow.selectedDiff === index ? "#4CC9FE" : "#335b8c"
+                border.width: 2
+
+                Text {
+                    anchors.centerIn: parent
+                    text: modelData
+                    color: "white"
+                    font.bold: true
+                    font.letterSpacing: 1
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: difficultyRow.selectedDiff = index
+                }
+
+                Behavior on color { ColorAnimation { duration: 150 } }
+            }
+        }
+    }
 
     Button {
         id: blastOffBtn
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: 40
+        anchors.top: difficultyRow.bottom
+        anchors.topMargin: 40
         anchors.horizontalCenter: parent.horizontalCenter
         width: 250
         height: 60
-        enabled: problemsRoot.selectedIndex !== -1
+        enabled: matchmakingRoot.selectedIndex !== -1 && difficultyRow.selectedDiff !== -1
 
         onClicked: {
-            var langName = languageModel.get(problemsRoot.selectedIndex).name
-            problemsRoot.languageChosen(langName)
+            missionStarted(matchmakingRoot.selectedIndex, difficultyRow.selectedDiff)
         }
 
         contentItem: Text {
-            text: qsTr("BLAST OFF 🚀")
+            text: qsTr("START GAME 🚀")
             color: "white"
             font.pointSize: 18
             font.bold: true
@@ -129,3 +175,5 @@ Rectangle {
         }
     }
 }
+
+

@@ -4,7 +4,6 @@ import QtQuick.Layouts
 
 Rectangle {
     id: signupPage
-    anchors.fill: parent
     color: "transparent"
     anchors.bottomMargin: 50
     property string currentError: ""

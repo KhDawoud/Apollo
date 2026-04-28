@@ -12,7 +12,7 @@ Window {
     visibility: Window.Maximized
     //initally user is logged out
     property bool isLoggedIn: false
-    property string username: ""
+    property string username: "username"
     property int userxp : 0
     property int userstreak : 0
 
@@ -363,7 +363,7 @@ Window {
         LeaderBoard { }
 
         // Index 3: MatchFinder
-        Rectangle { color: "transparent"; Text { text: "MatchFinder Page"; color: "white"; anchors.centerIn: parent } }
+        Matchmaking{}
 
         //Index 4: Login
         Login{}

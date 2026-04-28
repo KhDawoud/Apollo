@@ -56,6 +56,9 @@ qt_add_qml_module(appApollo
         SOURCES utils.hpp utils.cpp
         QML_FILES
         QML_FILES Account.qml
+        QML_FILES Matchmaking.qml
+        QML_FILES MatchmakingTable.qml
+        QML_FILES MatchLoading.qml
 )
 
 set_target_properties(appApollo PROPERTIES
