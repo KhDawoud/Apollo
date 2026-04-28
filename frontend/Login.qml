@@ -119,7 +119,7 @@ Rectangle {
                 //Error message if email or username is invalid
                 Text {
                     id: usererror
-                    text: currentError.toLowerCase().includes("email") || currentError.toLowerCase().includes("username") ? currentError : ""
+                    text: currentError.toLowerCase().includes("email format") || currentError.toLowerCase().includes("username must") ? currentError : ""
                     color: "#FF4C4C"
                     font.pointSize: 10
                     font.bold: true
@@ -161,7 +161,18 @@ Rectangle {
                 //Error message if email or username is invalid
                 Text {
                     id: passworderror
-                    text: currentError.toLowerCase().includes("password") ? currentError : ""
+                    text: currentError.toLowerCase().includes("password must") ? currentError : ""
+                    color: "#FF4C4C"
+                    font.pointSize: 10
+                    font.bold: true
+                    wrapMode: Text.WordWrap
+                    Layout.fillWidth: true
+                    horizontalAlignment: Text.AlignHCenter
+                    visible: text !== ""
+                }
+                Text {
+                    id: accounterror
+                    text: currentError.toLowerCase().includes("account does") ? currentError : ""
                     color: "#FF4C4C"
                     font.pointSize: 10
                     font.bold: true

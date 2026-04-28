@@ -45,7 +45,6 @@ void AuthManager::login(const QString &username, const QString &password)
     QJsonDocument doc(json);
 
     QNetworkReply *reply = networkManager->post(request, doc.toJson());
-
     connect(reply, &QNetworkReply::finished, this, [this, reply]()
             { onLoginReply(reply); });
 }
@@ -65,14 +64,15 @@ void AuthManager::onLoginReply(QNetworkReply *reply)
             QString name =  jsonObj["username"].toString();
             emit loginSuccess(xp,streak,name);
         }
-        else
-        {
-            emit loginFailed(jsonObj["message"].toString());
-        }
     }
     else
     {
-        emit loginFailed("Network error: Cannot connect to server.");
+        if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 401) {
+            // You can parse the body here too if the server sends JSON with a 401
+            emit loginFailed("Account does not exist. Invalid username/email or password.");
+        } else {
+            emit loginFailed("Network error: Cannot connect to server.");
+        }
     }
     reply->deleteLater();
 }
