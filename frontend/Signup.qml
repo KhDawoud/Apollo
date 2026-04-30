@@ -112,7 +112,7 @@ Rectangle {
             //Error message if email is invalid
             Text {
                 id: emailerror
-                text: currentError.toLowerCase().includes("email") ? currentError : "" 
+                text: currentError.toLowerCase().includes("invalid email format") ? currentError : ""
                 color: "#FF4C4C" 
                 font.pointSize: 10
                 font.bold: true
@@ -149,7 +149,7 @@ Rectangle {
             }
             Text {
                 id: usernameerror
-                text: currentError.toLowerCase().includes("username") ? currentError : "" 
+                text: currentError.toLowerCase().includes("username must") ? currentError : ""
                 color: "#FF4C4C" 
                 font.pointSize: 10
                 font.bold: true
@@ -188,7 +188,7 @@ Rectangle {
             //Error message if password is less than 8 characters
             Text {
                 id: passworderror
-                text: currentError.toLowerCase().includes("password") ? currentError : "" 
+                text: currentError.toLowerCase().includes("password must") ? currentError : ""
                 color: "#FF4C4C" 
                 font.pointSize: 10
                 font.bold: true
@@ -223,6 +223,17 @@ Rectangle {
                         border.color: confirmPassField.text !== "" && confirmPassField.text !== passField.text ? "#FF4C4C" : (confirmPassField.activeFocus ? "#4CC9FE" : "#DBE2EF")
                     }
                 }
+            }
+            Text {
+                id: accounterror
+                text: currentError.toLowerCase().includes("already") ? currentError : ""
+                color: "#FF4C4C"
+                font.pointSize: 10
+                font.bold: true
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+                horizontalAlignment: Text.AlignHCenter
+                visible: text !== ""
             }
 
             // Signup Button
