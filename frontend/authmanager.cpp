@@ -136,7 +136,7 @@ void AuthManager::onSignupReply(QNetworkReply *reply)
     else
     {
         if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 409) {
-            emit signupFailed("Username or Email already.");
+            emit signupFailed("Username or Email already exists.");
         } else {
             emit signupFailed("Network error: Cannot connect to server.");
         }
