@@ -5,6 +5,9 @@
 #include <boost/asio/strand.hpp>
 #include <boost/config.hpp>
 #include <boost/json/src.hpp>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
 #include <pqxx/pqxx>
 #include <iostream>
 #include <string>
@@ -13,6 +16,8 @@
 #include <memory>
 #include <thread>
 #include <vector>
+#include <filesystem>
+#include <cstdlib>
 
 namespace beast = boost::beast;
 namespace http = beast::http;
@@ -157,6 +162,115 @@ void handle_request(const http::request<http::string_body> &req, http::response<
             response_json["status"] = "success";
             response_json["leaderboard"] = users_array;
 
+            res.result(http::status::ok);
+            res.body() = boost::json::serialize(response_json);
+        }
+        else if (req.method() == http::verb::post && req.target() == "/api/submit_code")
+        {
+            boost::json::value parsed_body = boost::json::parse(req.body());
+            std::string language = parsed_body.at("language").as_string().c_str();
+
+            // since google test only works for c++ im just gonna send an error message for now if its another language
+            if (language != "cpp")
+            {
+                res.result(http::status::bad_request);
+                res.body() = R"({"status": "error", "message": "Unsupported language. Currently, only C++ is supported."})";
+                res.prepare_payload();
+                return;
+            }
+
+            std::string user_code = parsed_body.at("code").as_string().c_str();
+            std::string problem_id = parsed_body.at("problem_id").as_string().c_str();
+
+            // query database for the problems tests
+            std::string test_code;
+            {
+                pqxx::connection C(db_url);
+                pqxx::nontransaction N(C);
+
+                std::string query = "SELECT test_code FROM problems WHERE id = " + N.quote(problem_id) + ";";
+                pqxx::result R = N.exec(query);
+
+                if (R.empty() || R[0]["test_code"].is_null())
+                {
+                    res.result(http::status::not_found);
+                    res.body() = R"({"status": "error", "message": "Test code not found"})";
+                    res.prepare_payload();
+                    return;
+                }
+
+                test_code = R[0]["test_code"].as<std::string>();
+            }
+
+            // we make temporary directory for user code and the tests
+            auto uuid = boost::uuids::random_generator()();
+            std::string session_id = boost::uuids::to_string(uuid);
+            std::filesystem::path work_dir = std::filesystem::temp_directory_path() / "apollo_rce" / session_id;
+            std::filesystem::create_directories(work_dir);
+
+            std::ofstream(work_dir / "user_code.cpp") << user_code;
+            std::ofstream(work_dir / "unit_tests.cpp") << test_code;
+
+            // this is a script to run and test the code then save the output in a log file
+            std::string script =
+                "g++ -std=c++17 user_code.cpp unit_tests.cpp -lgtest -lgtest_main -pthread -o test_runner 2> compile_err.log\n"
+                "if [ $? -ne 0 ]; then exit 42; fi\n" // Exit 42 means compilation failed
+                "timeout 5 ./test_runner --gtest_output=json:result.json > run_out.log 2>&1\n"
+                "EXIT_CODE=$?\n"
+                "if [ $EXIT_CODE -eq 124 ]; then exit 124; fi\n" // Exit 124 means timeout
+                "exit $EXIT_CODE\n";
+            std::ofstream(work_dir / "run.sh") << script;
+
+            // we run through docker so user code doesn't interfere with the server and let them run malware
+            std::string docker_cmd = "docker run --rm --network none --memory 256m --cpus 1.0 --read-only --pids-limit 64 "
+                                     "-v " +
+                                     work_dir.string() + ":/workspace:rw -w /workspace gtest-env bash run.sh";
+
+            int exit_code = std::system(docker_cmd.c_str());
+
+            boost::json::object response_json;
+
+            if (exit_code == 42) // 42 means it didnt complie
+            {
+                std::ifstream err_file(work_dir / "compile_err.log");
+                std::string err_str((std::istreambuf_iterator<char>(err_file)), std::istreambuf_iterator<char>());
+
+                response_json["status"] = "error";
+                response_json["type"] = "compilation_error";
+                response_json["message"] = err_str;
+            }
+            else if (exit_code == 124) // 124 means it took longer than 5 seconds to run
+            {
+                response_json["status"] = "error";
+                response_json["type"] = "timeout";
+                response_json["message"] = "Execution exceeded the 5-second time limit.";
+            }
+            else
+            {
+                // if it wrote tests ran then we check tests otherwise it failed but at runtime
+                if (std::filesystem::exists(work_dir / "result.json"))
+                {
+                    std::ifstream res_file(work_dir / "result.json");
+                    std::string res_str((std::istreambuf_iterator<char>(res_file)), std::istreambuf_iterator<char>());
+                    boost::json::value gtest_data = boost::json::parse(res_str);
+
+                    response_json["status"] = (exit_code == 0) ? "success" : "error";
+                    response_json["type"] = (exit_code == 0) ? "all_passed" : "test_failure";
+                    response_json["test_results"] = gtest_data;
+                }
+                else
+                {
+                    // it actually turned out we didnt need to measure execution time because google test already does it
+                    std::ifstream out_file(work_dir / "run_out.log");
+                    std::string out_str((std::istreambuf_iterator<char>(out_file)), std::istreambuf_iterator<char>());
+
+                    response_json["status"] = "error";
+                    response_json["type"] = "runtime_error";
+                    response_json["message"] = "Program crashed during execution. Output: " + out_str;
+                }
+            }
+
+            std::filesystem::remove_all(work_dir);
             res.result(http::status::ok);
             res.body() = boost::json::serialize(response_json);
         }
