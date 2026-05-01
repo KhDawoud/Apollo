@@ -1,7 +1,8 @@
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 #include <boost/beast/version.hpp>
-#include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/dispatch.hpp>
+#include <boost/asio/strand.hpp>
 #include <boost/config.hpp>
 #include <boost/json/src.hpp>
 #include <pqxx/pqxx>
@@ -9,13 +10,16 @@
 #include <string>
 #include <fstream>
 #include <cstdlib>
+#include <memory>
+#include <thread>
+#include <vector>
 
 namespace beast = boost::beast;
 namespace http = beast::http;
 namespace net = boost::asio;
 using tcp = boost::asio::ip::tcp;
 
-// so i dont push my api key to github
+// so I don't push API key to github
 void load_env(const std::string &file_path = ".env")
 {
     std::ifstream file(file_path);
@@ -45,11 +49,13 @@ void load_env(const std::string &file_path = ".env")
     }
 }
 
-void handle_request(http::request<http::string_body> &req, http::response<http::string_body> &res)
+// chooses the right endpoint for the request
+void handle_request(const http::request<http::string_body> &req, http::response<http::string_body> &res)
 {
     res.version(req.version());
     res.set(http::field::server, "Boost.Beast Backend");
     res.set(http::field::content_type, "application/json");
+    res.keep_alive(req.keep_alive()); // so it doesn't have to restart connection after every request
 
     const char *db_url = std::getenv("DATABASE_URL");
     if (!db_url)
@@ -103,7 +109,6 @@ void handle_request(http::request<http::string_body> &req, http::response<http::
             std::string raw_password = parsed_body.at("password").as_string().c_str();
 
             pqxx::connection C(db_url);
-            // this makes sure data isnt corrupted if something fails
             pqxx::work W(C);
 
             std::string query =
@@ -128,33 +133,32 @@ void handle_request(http::request<http::string_body> &req, http::response<http::
         }
         else if (req.method() == http::verb::get && req.target() == "/api/leaderboard")
         {
-                pqxx::connection C(db_url);
-                pqxx::nontransaction N(C);
+            pqxx::connection C(db_url);
+            pqxx::nontransaction N(C);
 
-                // Query for top 10 players by XP
-                std::string query = 
-                    "SELECT username, total_xp, daily_streak FROM users "
-                    "ORDER BY total_xp DESC, username  ASC "
-                    "LIMIT 10;";
+            std::string query =
+                "SELECT username, total_xp, daily_streak FROM users "
+                "ORDER BY total_xp DESC, username  ASC "
+                "LIMIT 10;";
 
-                pqxx::result R = N.exec(query);
+            pqxx::result R = N.exec(query);
 
-                boost::json::array users_array;
-                for (auto const &row : R)
-                {
-                    boost::json::object user_obj;
-                    user_obj["username"] = row["username"].as<std::string>();
-                    user_obj["total_xp"] = row["total_xp"].as<int>();
-                    user_obj["daily_streak"] = row["daily_streak"].as<int>();
-                    users_array.push_back(user_obj);
-                }
+            boost::json::array users_array;
+            for (auto const &row : R)
+            {
+                boost::json::object user_obj;
+                user_obj["username"] = row["username"].as<std::string>();
+                user_obj["total_xp"] = row["total_xp"].as<int>();
+                user_obj["daily_streak"] = row["daily_streak"].as<int>();
+                users_array.push_back(user_obj);
+            }
 
-                boost::json::object response_json;
-                response_json["status"] = "success";
-                response_json["leaderboard"] = users_array;
+            boost::json::object response_json;
+            response_json["status"] = "success";
+            response_json["leaderboard"] = users_array;
 
-                res.result(http::status::ok);
-                res.body() = boost::json::serialize(response_json);
+            res.result(http::status::ok);
+            res.body() = boost::json::serialize(response_json);
         }
         else
         {
@@ -164,7 +168,6 @@ void handle_request(http::request<http::string_body> &req, http::response<http::
     }
     catch (const pqxx::integrity_constraint_violation &e)
     {
-        // this is specifically when u try to login with same email or name as somemone else
         res.result(http::status::conflict);
         res.body() = R"({"status": "error", "message": "Username or Email already exists"})";
     }
@@ -178,31 +181,157 @@ void handle_request(http::request<http::string_body> &req, http::response<http::
     res.prepare_payload();
 }
 
+// i switched it to be async so each thread handles a user connection
+// which is an object of this type
+class session : public std::enable_shared_from_this<session> // apparently this keeps the object from being deleted
+{
+    beast::tcp_stream stream_;
+    beast::flat_buffer buffer_;
+    http::request<http::string_body> req_;
+    http::response<http::string_body> res_;
+
+public:
+    // now the class deals with this connection not listener
+    explicit session(tcp::socket &&socket) : stream_(std::move(socket)) {}
+
+    void run()
+    {
+        net::dispatch(stream_.get_executor(),
+                      beast::bind_front_handler(&session::do_read, shared_from_this())); // the handler makes sure on_xxx is called after it finishes
+    }
+
+private:
+    void do_read()
+    {
+        req_ = {};
+        stream_.expires_after(std::chrono::seconds(30)); // if it takes too long we just timeout
+
+        http::async_read(stream_, buffer_, req_,
+                         beast::bind_front_handler(&session::on_read, shared_from_this()));
+    }
+
+    void on_read(beast::error_code ec, std::size_t bytes_transferred)
+    {
+        boost::ignore_unused(bytes_transferred);
+
+        if (ec == http::error::end_of_stream)
+            return do_close();
+
+        if (ec)
+        {
+            std::cerr << "Read error: " << ec.message() << "\n";
+            return;
+        }
+
+        handle_request(req_, res_);
+
+        stream_.expires_after(std::chrono::seconds(30));
+        http::async_write(stream_, res_,
+                          beast::bind_front_handler(&session::on_write, shared_from_this()));
+    }
+
+    void on_write(beast::error_code ec, std::size_t bytes_transferred)
+    {
+        boost::ignore_unused(bytes_transferred);
+
+        if (ec)
+        {
+            std::cerr << "Write error: " << ec.message() << "\n";
+            return;
+        }
+
+        // close or continue handling requests depending on user
+        if (!req_.keep_alive())
+        {
+            return do_close();
+        }
+
+        do_read();
+    }
+
+    void do_close()
+    {
+        beast::error_code ec;
+        stream_.socket().shutdown(tcp::socket::shutdown_send, ec);
+    }
+};
+
+// takes each user connection and gives it a thread to handle it
+class listener : public std::enable_shared_from_this<listener>
+{
+    net::io_context &ioc_;
+    tcp::acceptor acceptor_;
+
+public:
+    listener(net::io_context &ioc, tcp::endpoint endpoint)
+        : ioc_(ioc), acceptor_(net::make_strand(ioc))
+    {
+        beast::error_code ec;
+        acceptor_.open(endpoint.protocol(), ec);
+        acceptor_.set_option(net::socket_base::reuse_address(true), ec);
+        acceptor_.bind(endpoint, ec);
+        acceptor_.listen(net::socket_base::max_listen_connections, ec);
+    }
+
+    void run()
+    {
+        do_accept();
+    }
+
+private:
+    void do_accept()
+    {
+        // a strand makes it so every thread is handled one by one so they dont conflict
+        acceptor_.async_accept(
+            net::make_strand(ioc_),
+            beast::bind_front_handler(&listener::on_accept, shared_from_this()));
+    }
+
+    void on_accept(beast::error_code ec, tcp::socket socket)
+    {
+        if (ec)
+        {
+            std::cerr << "Couldn't accept user: " << ec.message() << "\n";
+        }
+        else
+        {
+            std::make_shared<session>(std::move(socket))->run();
+        }
+
+        do_accept();
+    }
+};
+
 int main()
 {
     try
     {
         load_env();
-        net::io_context ioc;
-        tcp::acceptor acceptor(ioc, {net::ip::make_address("0.0.0.0"), 8080});
+
+        // get the amount of cores in the machine to know how many threads to make
+        auto const threads = std::max<unsigned>(1, std::thread::hardware_concurrency());
+
+        net::io_context ioc{static_cast<int>(threads)};
+        tcp::endpoint endpoint{net::ip::make_address("0.0.0.0"), 8080};
+
+        std::make_shared<listener>(ioc, endpoint)->run();
 
         std::cout << "Server running on port 8080..." << std::endl;
 
-        while (true)
+        // start up each thread
+        std::vector<std::thread> v;
+        v.reserve(threads - 1);
+        for (auto i = threads - 1; i > 0; --i)
         {
-            tcp::socket socket(ioc);
-            acceptor.accept(socket);
-            beast::flat_buffer buffer;
-            http::request<http::string_body> req;
-            http::response<http::string_body> res;
-
-            http::read(socket, buffer, req);
-            handle_request(req, res);
-            http::write(socket, res);
-
-            beast::error_code ec;
-            socket.shutdown(tcp::socket::shutdown_send, ec);
+            v.emplace_back([&ioc]
+                           { ioc.run(); });
         }
+
+        ioc.run();
+
+        // since run() is blocking if we reach here the server is closing so we just close each thread
+        for (auto &t : v)
+            t.join();
     }
     catch (const std::exception &e)
     {
