@@ -31,6 +31,8 @@ else()
     endif()
 endif()
 
+find_package(OpenSSL REQUIRED)
+
 add_executable(${PROJECT_NAME}
     main.cpp
 )
@@ -41,6 +43,8 @@ target_link_libraries(${PROJECT_NAME}
         Boost::json
         Boost::thread 
         ${PQXX_LINK_TARGET}
+        OpenSSL::SSL
+        OpenSSL::Crypto
 )
 
 if(UNIX AND NOT APPLE)

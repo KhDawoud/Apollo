@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Apollo.Code
+import Apollo.Backend 1.0
 
 Rectangle {
     id: solvingPage
@@ -21,9 +22,25 @@ Rectangle {
 
     property bool showAIModal: false
     property bool isAIFetching: false
-    property string aiFullResponse: "Looking at your code, it seems you need to iterate through the array. \n\nConsider using a standard `for` loop to check the state of each primary thruster. \n\n💡 Hint: If you encounter a `0` at any index, you immediately know the system is compromised and can `return false` right away to achieve that O(n) runtime!\n\nAdditionally, make sure you check your edge cases—what if the array is entirely empty? You might want to handle that at the very beginning of your function to save processing time."
+    property string aiFullResponse: ""
     property string aiDisplayedResponse: ""
     property int aiTypeIndex: 0
+
+    AIManager {
+        id: aiManager
+
+        onHintReceived: function (hint) {
+            solvingPage.isAIFetching = false;
+            solvingPage.aiFullResponse = hint;
+            aiTypewriterTimer.start();
+        }
+
+        onRequestFailed: function (errorMessage) {
+            solvingPage.isAIFetching = false;
+            solvingPage.aiFullResponse = "⚠️ " + errorMessage;
+            aiTypewriterTimer.start();
+        }
+    }
 
     ColumnLayout {
         anchors.fill: parent
@@ -146,10 +163,10 @@ Rectangle {
                     solvingPage.showAIModal = true;
                     solvingPage.isAIFetching = true;
                     solvingPage.aiDisplayedResponse = "";
+                    solvingPage.aiFullResponse = "";
                     solvingPage.aiTypeIndex = 0;
-
                     aiTypewriterTimer.stop();
-                    aiFetchTimer.start();
+                    aiManager.fetchHint(solvingPage.missionDescription, myCodeEditor.text);
                 }
             }
 
@@ -187,28 +204,118 @@ Rectangle {
 
             Button {
                 id: launchButton
-                text: "LAUNCH 🚀"
-                Layout.preferredWidth: 150
+
+                property string launchState: "idle" 
+
+                Layout.preferredWidth: (launchState === "success" || launchState === "failed") ? 44 : 150
                 Layout.preferredHeight: 44
 
-                contentItem: Text {
-                    text: parent.text
-                    color: "white"
-                    font.bold: true
-                    font.pixelSize: 16
-                    font.letterSpacing: 1.5
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
+                enabled: launchState === "idle"
+
+                Behavior on Layout.preferredWidth {
+                    NumberAnimation {
+                        duration: 350
+                        easing.type: Easing.OutBack
+                    }
+                }
+
+                contentItem: Item {
+                    anchors.fill: parent
+
+                    BusyIndicator {
+                        anchors.centerIn: parent
+                        width: 24
+                        height: 24
+                        running: launchButton.launchState === "evaluating"
+                        visible: launchButton.launchState === "evaluating"
+                    }
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: {
+                            if (launchButton.launchState === "idle")
+                                return "LAUNCH 🚀";
+                            if (launchButton.launchState === "success")
+                                return "✓";
+                            if (launchButton.launchState === "failed")
+                                return "✗";
+                            return "";
+                        }
+                        color: "white"
+                        font.bold: true
+                        font.pixelSize: (launchButton.launchState === "success" || launchButton.launchState === "failed") ? 22 : 16
+                        font.letterSpacing: launchButton.launchState === "idle" ? 1.5 : 0
+                        visible: launchButton.launchState !== "evaluating"
+
+                        Behavior on font.pixelSize {
+                            NumberAnimation {
+                                duration: 200
+                            }
+                        }
+                    }
                 }
 
                 background: Rectangle {
-                    color: parent.pressed ? "#047857" : (parent.hovered ? "#059669" : "#10B981")
-                    radius: 8
+
+                    radius: (launchButton.launchState === "success" || launchButton.launchState === "failed") ? 22 : 8
+
+                    color: {
+                        if (launchButton.launchState === "evaluating")
+                            return "#3B82F6"; 
+                        if (launchButton.launchState === "success")
+                            return "#10B981";
+                        if (launchButton.launchState === "failed")
+                            return "#EF4444";
+
+                        return parent.pressed ? "#047857" : (parent.hovered ? "#059669" : "#10B981");
+                    }
+
+                    Behavior on radius {
+                        NumberAnimation {
+                            duration: 350
+                            easing.type: Easing.OutBack
+                        }
+                    }
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: 300
+                        }
+                    }
+                }
+
+                onClicked: {
+                    launchButton.launchState = "evaluating";
+
+                    // ill connect the testing logic here once we fix the problems
+
+                    launchMockTimer.start();
                 }
             }
         }
     }
 
+    // timers for animations
+
+    // will remove after i connect tests backend for now it just randomly fails or passes
+    Timer {
+        id: launchMockTimer
+        interval: 1500 
+        onTriggered: {
+            var passed = Math.random() > 0.5;
+            launchButton.launchState = passed ? "success" : "failed";
+            launchResetTimer.start();
+        }
+    }
+
+    Timer {
+        id: launchResetTimer
+        interval: 2500
+        onTriggered: {
+            launchButton.launchState = "idle";
+        }
+    }
+
+    // simulates the tests occuring
     Timer {
         id: simulationTimer
         interval: 100
@@ -223,16 +330,7 @@ Rectangle {
         }
     }
 
-    Timer {
-        id: aiFetchTimer
-        interval: 1200
-        repeat: false
-        onTriggered: {
-            solvingPage.isAIFetching = false;
-            aiTypewriterTimer.start();
-        }
-    }
-
+    // simulates ai typing out response
     Timer {
         id: aiTypewriterTimer
         interval: 25
@@ -247,7 +345,9 @@ Rectangle {
         }
     }
 
-    // AI Modal Overlay
+    // the popups
+
+    //ai
     Rectangle {
         id: aiOverlay
         anchors.fill: parent
@@ -331,7 +431,6 @@ Rectangle {
                     color: "#1E293B"
                 }
 
-                // this only scrolls vertically not horuzontaly to not break animation
                 Item {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
@@ -390,6 +489,7 @@ Rectangle {
         }
     }
 
+    // tests
     Rectangle {
         id: resultsOverlay
         anchors.fill: parent

@@ -18,7 +18,6 @@ Item {
             }
         }
 
-        // 4. Add the sliding animations
         pushEnter: Transition {
             PropertyAnimation { property: "x"; from: mainStack.width; to: 0; duration: 400; easing.type: Easing.OutCubic }
         }

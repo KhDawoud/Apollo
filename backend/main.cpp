@@ -8,6 +8,9 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
+#include <boost/asio/ssl.hpp>
+#include <boost/beast/ssl.hpp>
+#include <openssl/err.h>
 #include <pqxx/pqxx>
 #include <iostream>
 #include <string>
@@ -51,6 +54,111 @@ void load_env(const std::string &file_path = ".env")
             setenv(key.c_str(), value.c_str(), 1);
 #endif
         }
+    }
+}
+
+void handle_ask_ai(const http::request<http::string_body> &req, http::response<http::string_body> &res)
+{
+    boost::json::value parsed_body = boost::json::parse(req.body());
+    std::string problem_desc = parsed_body.at("problem_description").as_string().c_str();
+    std::string user_code = parsed_body.at("code").as_string().c_str();
+
+    const char *api_key = std::getenv("GROQ_API_KEY");
+    if (!api_key)
+    {
+        res.result(http::status::internal_server_error);
+        res.body() = R"({"status": "error", "message": "API key not added"})";
+        return;
+    }
+
+    try
+    {
+        // this part is mostly AI since I had no clue how to use the groq API without a wrapper library like in python
+        namespace ssl = boost::asio::ssl;
+        net::io_context ioc;
+        ssl::context ctx(ssl::context::tlsv12_client);
+        ctx.set_default_verify_paths();
+
+        tcp::resolver resolver(ioc);
+        beast::ssl_stream<beast::tcp_stream> stream(ioc, ctx);
+
+        // Set SNI Hostname
+        if (!SSL_set_tlsext_host_name(stream.native_handle(), "api.groq.com"))
+        {
+            beast::error_code ec{static_cast<int>(::ERR_get_error()), net::error::get_ssl_category()};
+            throw beast::system_error{ec};
+        }
+
+        // Resolve and connect
+        auto const results = resolver.resolve("api.groq.com", "443");
+        beast::get_lowest_layer(stream).connect(results);
+        stream.handshake(ssl::stream_base::client);
+
+        // Construct the HTTP POST request to Groq's OpenAI-compatible endpoint
+        http::request<http::string_body> groq_req{http::verb::post, "/openai/v1/chat/completions", 11};
+        groq_req.set(http::field::host, "api.groq.com");
+        groq_req.set(http::field::authorization, std::string("Bearer ") + api_key);
+        groq_req.set(http::field::content_type, "application/json");
+
+        // Build the JSON Payload
+        boost::json::object body;
+        body["model"] = "llama-3.3-70b-versatile";
+
+        boost::json::array messages;
+
+        boost::json::object sys_msg;
+        sys_msg["role"] = "system";
+        sys_msg["content"] = "You are a helpful coding assistant. Given a problem description and the user's code, give a small hint that nudges them in the right direction without directly giving them the answer or giving them step by step instructions. Keep your response strictly under 100 words.";
+        messages.push_back(sys_msg);
+
+        boost::json::object usr_msg;
+        usr_msg["role"] = "user";
+        usr_msg["content"] = "Problem:\n" + problem_desc + "\n\nUser Code:\n" + user_code;
+        messages.push_back(usr_msg);
+
+        body["messages"] = messages;
+        groq_req.body() = boost::json::serialize(body);
+        groq_req.prepare_payload();
+
+        // Send request and read response
+        http::write(stream, groq_req);
+        beast::flat_buffer buffer;
+        http::response<http::string_body> groq_res;
+        http::read(stream, buffer, groq_res);
+
+        // Gracefully close the stream
+        beast::error_code ec;
+        stream.shutdown(ec);
+        if (ec == net::error::eof || ec == ssl::error::stream_truncated)
+        {
+            ec = {}; // Expected errors on connection close
+        }
+
+        // Parse Groq's response and send it back to the client
+        if (groq_res.result() == http::status::ok)
+        {
+            boost::json::value groq_parsed = boost::json::parse(groq_res.body());
+            std::string ai_response = groq_parsed.at("choices").as_array()[0].as_object().at("message").as_object().at("content").as_string().c_str();
+
+            boost::json::object response_json;
+            response_json["status"] = "success";
+            response_json["hint"] = ai_response;
+
+            res.result(http::status::ok);
+            res.body() = boost::json::serialize(response_json);
+        }
+        else
+        {
+            res.result(http::status::bad_gateway);
+            res.body() = R"({"status": "error", "message": "Failed to fetch response from AI"})";
+            std::cerr << "Groq API Error: " << groq_res.body() << "\n";
+        }
+    }
+    catch (const std::exception &e)
+    {
+        res.result(http::status::internal_server_error);
+        res.body() = R"({"status": "error", "message": "Error communicating with AI service"})";
+        std::cerr << "SSL/Network Error: " << e.what() << "\n";
     }
 }
 
@@ -291,6 +399,10 @@ void handle_request(const http::request<http::string_body> &req, http::response<
         else if (req.method() == http::verb::post && req.target() == "/api/submit_code")
         {
             handle_submit_code(req, res, db_url);
+        }
+        else if (req.method() == http::verb::post && req.target() == "/api/ask_ai")
+        {
+            handle_ask_ai(req, res);
         }
         else
         {
