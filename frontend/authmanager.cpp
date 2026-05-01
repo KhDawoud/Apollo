@@ -68,7 +68,6 @@ void AuthManager::onLoginReply(QNetworkReply *reply)
     else
     {
         if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 401) {
-            // You can parse the body here too if the server sends JSON with a 401
             emit loginFailed("Account does not exist. Invalid username/email or password.");
         } else {
             emit loginFailed("Network error: Cannot connect to server.");
@@ -136,7 +135,11 @@ void AuthManager::onSignupReply(QNetworkReply *reply)
     }
     else
     {
-        emit signupFailed("Network error: Cannot connect to server.");
+        if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 409) {
+            emit signupFailed("Username or Email already exists.");
+        } else {
+            emit signupFailed("Network error: Cannot connect to server.");
+        }
     }
     reply->deleteLater();
 }
