@@ -4,7 +4,6 @@ import QtQuick.Layouts
 
 Rectangle {
     id: welcomePage
-    anchors.fill: parent
     color: "transparent"
 
     //back button to be able to traverse back to home as the tabbar is not shown

@@ -6,6 +6,8 @@ Rectangle {
     id: rect
     color: "transparent"
     visible: mainNavBar.currentIndex === 2
+    property bool isLoading: true
+
 
     Text {
         id: titleText
@@ -53,7 +55,13 @@ Rectangle {
                     id: globalTab
                     text: "GLOBAL"
                     flat: true
-                    onClicked: filterBar.showingFriends = false
+                    onClicked: {
+                        if (!rect.isLoading) {
+                            filterBar.showingFriends = false
+                            rect.isLoading = true
+                            authManager.fetchleaderboard()
+                        }
+                    }
                     contentItem: Text {
                         text: parent.text
                         font.bold: true
@@ -66,7 +74,10 @@ Rectangle {
                     id: friendsTab
                     text: "FRIENDS"
                     flat: true
-                    onClicked: filterBar.showingFriends = true
+                    onClicked:{
+                        filterBar.showingFriends = true
+                        rect.isLoading = false
+                    }
                     contentItem: Text {
                         text: parent.text
                         font.bold: true
@@ -140,23 +151,33 @@ Rectangle {
                     Layout.preferredWidth: 100
                 }
             }
-            ListModel {
-                id: globalModel
-                ListElement { name: "Player 1"; streak:"45"; score: "25,400" }
-                ListElement { name: "Player 2"; streak:"35"; score: "22,100" }
-                ListElement { name: "Player 3"; streak:"23"; score: "19,850" }
-                ListElement { name: "Player 4"; streak:"23"; score: "15,200" }
-                ListElement { name: "Player 5"; streak:"45"; score: "14,900" }
-                ListElement { name: "Player 6"; streak:"12"; score: "13,900" }
-                ListElement { name: "Player 7"; streak:"23"; score: "11,300" }
-                ListElement { name: "Player 8"; streak:"25"; score: "10,100" }
-                ListElement { name: "Player 9"; streak:"45"; score: "9,900" }
-                ListElement { name: "Player 10"; streak:"12"; score: "9,200" }
+            Connections {
+                target: authManager
+                function onLeaderboardReceived(data) {
+                    globalModel.clear();
+                    for (var i = 0; i < data.length; i++) {
+                        globalModel.append({
+                            "username": data[i].username,
+                            "xp": data[i].total_xp,
+                            "streak": data[i].daily_streak
+                        });
+                    }
+                    rect.isLoading = false;
+                }
+            }
+            Component.onCompleted: {
+                rect.isLoading = true;
+                authManager.fetchleaderboard();
             }
             ListModel {
+                id: globalModel
+                ListElement { username: "Loading..."; xp: 0; streak: 0 }
+            }
+
+            ListModel {
                 id: friendsModel
-                ListElement { name: "Friend 1"; streak: "10"; score: "8030" }
-                ListElement { name: "ME"; streak: "7"; score: "7,450" }
+                ListElement { username: "Friend 1"; streak: "10"; xp: "8030" }
+                ListElement { username: "ME"; streak: "7"; xp: "7,450" }
             }
 
             ListView {
@@ -168,6 +189,7 @@ Rectangle {
                 anchors.margins: 15
 
                 model: filterBar.showingFriends ? friendsModel : globalModel
+                visible: !isLoading
 
                 spacing: 8
                 clip: true
@@ -217,55 +239,73 @@ Rectangle {
                             font.bold: true
                         }
                     }
-                    Text{ //Name
-                        text: name
-                        color:{
-                            if(index+1==1)
-                                return "#C9B037"
-                            if(index+1==2)
-                                return "#D7D7D7"
-                            if(index+1==3)
-                                return "#CE8946"
-                            return "white"
-                        }
-                        font.pointSize: 14
-                        font.bold: true
-                        Layout.fillWidth: true
-                    }
-
-                    Item {
-                        Layout.preferredWidth: 100
-                        height: parent.height
-
-                        Row {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            anchors.verticalCenter: parent.verticalCenter
-                            spacing: 2
-
-                            Text {
-                                text: model.streak
-                                font.pointSize: 16
-                                color: "white"
-                                font.bold: true
-                                verticalAlignment: Text.AlignVCenter
+                        Text{ //Name
+                            text: username
+                            color:{
+                                if(index+1==1)
+                                    return "#C9B037"
+                                if(index+1==2)
+                                    return "#D7D7D7"
+                                if(index+1==3)
+                                    return "#CE8946"
+                                return "white"
                             }
-                            Text {
-                                text: "🔥"
-                                font.pointSize: 14
-                                verticalAlignment: Text.AlignVCenter
+                            font.pointSize: 14
+                            font.bold: true
+                            Layout.fillWidth: true
+                        }
+
+                        Item {
+                            Layout.preferredWidth: 100
+                            height: parent.height
+
+                            Row {
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                anchors.verticalCenter: parent.verticalCenter
+                                spacing: 2
+
+                                Text {
+                                    text: streak
+                                    font.pointSize: 16
+                                    color: "white"
+                                    font.bold: true
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+                                Text {
+                                    text: "🔥"
+                                    font.pointSize: 14
+                                    verticalAlignment: Text.AlignVCenter
+                                }
                             }
                         }
-                    }
-                    Text { //Score
-                        text: score
-                        font.bold: true
-                        font.pointSize: 14
-                        color: "#BEE3F8"
-                        horizontalAlignment: Text.AlignRight
-                        Layout.preferredWidth: 100
-                    }
+                        Text { //Score
+                            text: xp
+                            font.bold: true
+                            font.pointSize: 14
+                            color: "#BEE3F8"
+                            horizontalAlignment: Text.AlignRight
+                            Layout.preferredWidth: 100
+                        }
                     }
                 }
+            }
+            Column {
+                    anchors.centerIn: parent
+                    visible: rect.isLoading
+                    spacing: 10
+
+                    BusyIndicator {
+                        id: loadingSpinner
+                        running: rect.isLoading
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
+
+                    Text {
+                        text: "FETCHING TOP PLAYERS..."
+                        color: "#3F72AF"
+                        font.bold: true
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
             }
         }
         //My stats area
@@ -325,7 +365,7 @@ Rectangle {
                         anchors.centerIn: parent
                         width: parent.width - 20
                         Text { text: "TOTAL SCORE"; color: "#DBE2EF"; font.pointSize: 9; font.bold: true }
-                        Text { text: "7,450"; color: "white"; font.pointSize: 20; font.bold: true }
+                        Text { text: userxp; color: "white"; font.pointSize: 20; font.bold: true }
                     }
                 }
 
@@ -344,7 +384,7 @@ Rectangle {
                         Text { text: "WIN STREAK"; color: "#DBE2EF"; font.pointSize: 9; font.bold: true }
                         Row {
                             spacing: 8
-                            Text { text: "7"; color: "white"; font.pointSize: 20; font.bold: true }
+                            Text { text: userstreak; color: "white"; font.pointSize: 20; font.bold: true }
                             Text { text: "🔥"; font.pointSize: 16; anchors.verticalCenter: parent.verticalCenter }
                         }
                     }
