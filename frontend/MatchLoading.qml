@@ -54,6 +54,7 @@ Item {
         anchors.centerIn: parent
 
 
+
         // Your Profile
         Column {
             id: playerOne
@@ -248,6 +249,51 @@ Item {
                 color: "white"
                 font.pointSize: 14
                 font.family: "Monospace"
+            }
+        }
+        // Cancel match button
+        Rectangle {
+            id: cancelButton
+            width: 200
+            height: 45
+            radius: 8
+
+            // Only show the button when the timer is spinning (searching)
+            // When matchTimer.stop() is called, this button will vanish
+            visible: matchTimer.running
+            opacity: visible ? 1.0 : 0.0
+
+            // Disables clicks when not visible so the user doesn't accidentally click on nothing
+            enabled: visible
+
+            color: cancelMouseArea.containsMouse ? "#33ffffff" : "#11ffffff"
+            border.color: "#44ffffff"
+            border.width: 1
+
+            anchors.top: problemBox.bottom
+            anchors.topMargin: 40
+            anchors.horizontalCenter: parent.horizontalCenter
+
+            Behavior on opacity { NumberAnimation { duration: 250 } }
+
+            Text {
+                text: "CANCEL MATCH"
+                color: "white"
+                font.pointSize: 10
+                font.bold: true
+                anchors.centerIn: parent
+            }
+
+            MouseArea {
+                id: cancelMouseArea
+                anchors.fill: parent
+                hoverEnabled: true
+                onClicked: {
+                    //Stops all the animations
+                    matchTimer.stop();
+                    stopTimer.stop();
+                    mainStack.pop();
+                }
             }
         }
     }

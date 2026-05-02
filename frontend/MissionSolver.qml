@@ -79,24 +79,35 @@ Rectangle {
         Rectangle {
             id: descriptionBox
             Layout.fillWidth: true
-            Layout.preferredHeight: descriptionText.implicitHeight + 40
+            Layout.preferredHeight: 200
+            Layout.maximumHeight: 250
             color: "#131E30"
             radius: 12
-            border.color: "#1E293B"
+            clip: true
 
-            Text {
-                id: descriptionText
+            ScrollView {
+                id: descScroll
                 anchors.fill: parent
-                anchors.margins: 20
-                text: missionDescription
-                        .replace(/&/g, "&amp;")
-                        .replace(/</g, "&lt;")
-                        .replace(/>/g, "&gt;")
-                        .replace(/\n/g, "<br>")
-                color: "#CBD5E1"
-                font.pixelSize: 16
-                wrapMode: Text.WordWrap
-                lineHeight: 1.4
+                padding: 5
+                contentHeight: descriptionText.height + 40
+
+                Text {
+                    id: descriptionText
+                    width: descScroll.availableWidth
+
+                    text: missionDescription
+                                .replace(/&/g, "&amp;")
+                                .replace(/</g, "&lt;")
+                                .replace(/>/g, "&gt;")
+                                .replace(/\n/g, "<br>")
+
+                    color: "#CBD5E1"
+                    font.pixelSize: 16
+                    wrapMode: Text.WordWrap
+                    lineHeight: 1.4
+
+                    height: implicitHeight
+                }
             }
         }
 
