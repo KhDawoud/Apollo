@@ -18,23 +18,33 @@ Item {
 
 
     property var opponentNames: ["CyberOrbit", "StellarCoder", "LunaDev", "Nebula99", "ApolloAce"]
-    property var problems: [
-        "Array Traversal & State Tracking",
-        "Sliding Window Fundamentals",
-        "Hash Maps for Fast Lookup",
-        "Two Pointers Technique",
-        "Recursion Basics",
-        "Stack Usage",
-        "Queue & BFS",
-        "Binary Search",
-        "Sorting Strategies",
-        "Greedy Algorithms",
-        "Dynamic Programming Intro",
-        "String Parsing",
-        "Graph Representation",
-        "Bit Manipulation",
-        "Object Modeling"
-    ];
+    ListModel {
+        id: problemsModel
+    }
+    function languageName() {
+        var languages = ["Python", "C++", "Java", "JavaScript", "Rust", "Go", "C#", "Ruby"]
+        return languages[gameLanguage]
+    }
+
+    Component.onCompleted: authManager.fetchProblemsList(languageName())
+
+    Connections {
+        target: authManager
+        function onFetchProblemsListSuccess(problems) {
+            var difficultyMap = ["Easy", "Medium", "Hard"]
+            var selectedDifficulty = difficultyMap[gameDifficulty]
+
+            problemsModel.clear()
+            for (let i = 0; i < problems.length; i++) {
+                if (problems[i].difficulty === selectedDifficulty) {
+                    problemsModel.append(problems[i])
+                }
+            }
+        }
+        function onFetchProblemsListFailed(error) {
+            console.log("Failed to fetch problems: " + error)
+        }
+    }
 
 
     Item {
@@ -252,7 +262,10 @@ Item {
         onTriggered: {
             // fast rolling text
             opponentNameText.text = opponentNames[Math.floor(Math.random() * opponentNames.length)]
-            problemText.text = "> " + problems[Math.floor(Math.random() * problems.length)]
+            if (problemsModel.count > 0) {
+                var idx = Math.floor(Math.random() * problemsModel.count)
+                problemText.text = "> " + problemsModel.get(idx).name
+            }
             foundOpponentXp = Math.floor(Math.random() * 9999)
             foundOpponentStreak = Math.floor(Math.random() * 20)
         }
@@ -267,7 +280,8 @@ Item {
             foundOpponentName = "CyberStriker_01" //these will be fetched later
             foundOpponentXp = "12,450"
             foundOpponentStreak = "12"
-            problemText.text = "SELECTED: Binary Search Tree"
+            var idx = Math.floor(Math.random() * problemsModel.count)
+            problemText.text = "SELECTED: " + problemsModel.get(idx).name
 
             // wait 1 second after finding, then go to the game
             finalTransition.start()
