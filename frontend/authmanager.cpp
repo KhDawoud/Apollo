@@ -5,6 +5,7 @@
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QByteArray>
+#include <QJsonArray>
 
 AuthManager::AuthManager(QObject *parent) : QObject(parent)
 {
@@ -111,6 +112,63 @@ void AuthManager::onSignupReply(QNetworkReply *reply)
     else
     {
         emit signupFailed("Network error: Cannot connect to server.");
+    }
+    reply->deleteLater();
+}
+
+void AuthManager::fetchProblemsList(const QString &language)
+{
+    QUrl url("http://localhost:8080/api/problems?language=" + language);
+    QNetworkRequest request(url);
+
+    QNetworkReply *reply = networkManager->get(request);
+    connect(reply, &QNetworkReply::finished, this, [this, reply]()
+            { onFetchProblemsList(reply); });
+}
+
+void AuthManager::onFetchProblemsList(QNetworkReply *reply)
+{
+    if (reply->error() == QNetworkReply::NoError){
+        QByteArray response = reply->readAll();
+        QJsonDocument jsonDoc = QJsonDocument::fromJson(response);
+        QJsonArray jsonArray = jsonDoc.array();
+
+        QVariantList problemslist;
+        for (const QJsonValue &val : jsonArray) {
+            problemslist.append(val.toObject().toVariantMap());
+        }
+
+        emit fetchProblemsListSuccess(problemslist);
+    }
+    else
+    {
+        emit fetchProblemsListFailed("Network error: Cannot connect to server.");
+    }
+    reply->deleteLater();
+}
+
+void AuthManager::fetchProblem(int id)
+{
+    QUrl url("http://localhost:8080/api/problem?id=" + QString::number(id));
+    QNetworkRequest request(url);
+
+    QNetworkReply *reply = networkManager->get(request);
+    connect(reply, &QNetworkReply::finished, this, [this, reply]()
+            { onFetchProblem(reply); });
+}
+
+void AuthManager::onFetchProblem(QNetworkReply *reply)
+{
+    if (reply->error() == QNetworkReply::NoError){
+        QByteArray response = reply->readAll();
+        QJsonDocument jsonDoc = QJsonDocument::fromJson(response);
+        QVariantMap problem = jsonDoc.object().toVariantMap();
+
+        emit fetchProblemSuccess(problem);
+    }
+    else
+    {
+        emit fetchProblemFailed("Network error: Cannot connect to server.");
     }
     reply->deleteLater();
 }

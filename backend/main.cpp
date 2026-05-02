@@ -1,3 +1,4 @@
+//Backend
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 #include <boost/beast/version.hpp>
@@ -124,6 +125,82 @@ void handle_request(http::request<http::string_body> &req, http::response<http::
             res.result(http::status::created);
             res.body() = boost::json::serialize(response_json);
         }
+        else if (req.method() == http::verb::get && req.target().starts_with("/api/problems")){
+            std::string target = std::string(req.target());
+            std::string language = target.substr(target.find("=") + 1);
+
+            pqxx::connection C(db_url);
+            pqxx::nontransaction N(C);
+
+            std::string query =
+                "SELECT id, name, topic, difficulty FROM problems WHERE language =" + N.quote(language);
+
+            pqxx::result R = N.exec(query);
+
+
+            boost::json::array results;
+            for (auto row : R) {
+                boost::json::object item;
+                item["id"] = row["id"].as<int>();
+                item["name"] = row["name"].as<std::string>();
+                item["topic"] = row["topic"].as<std::string>();
+                item["difficulty"] = row["difficulty"].as<std::string>();
+                results.push_back(item);
+            }
+            res.result(http::status::ok);
+            res.body() = boost::json::serialize(results);
+
+        }
+
+        else if (req.method() == http::verb::get && req.target().starts_with("/api/problem?"))
+        {
+            std::string target = std::string(req.target());
+            int problem_id = std::stoi(target.substr(target.find("=") + 1));
+
+            pqxx::connection C(db_url);
+            pqxx::nontransaction N(C);
+
+            // Get problem details
+            std::string problem_query =
+                "SELECT name, description, initial_code FROM problems WHERE id = " + std::to_string(problem_id);
+            pqxx::result problem_result = N.exec(problem_query);
+
+            if (problem_result.empty())
+            {
+                res.result(http::status::not_found);
+                res.body() = R"({"status": "error", "message": "Problem not found"})";
+                res.prepare_payload();
+                return;
+            }
+
+            // Get lessons for this problem
+            std::string lessons_query =
+                "SELECT title, content, slide_order FROM lessons WHERE problem_id = " + std::to_string(problem_id) +
+                " ORDER BY slide_order ASC";
+            pqxx::result lessons_result = N.exec(lessons_query);
+
+            // Build response
+            boost::json::object response_json;
+            response_json["name"] = problem_result[0]["name"].as<std::string>();
+            response_json["description"] = problem_result[0]["description"].as<std::string>();
+            response_json["initial_code"] = problem_result[0]["initial_code"].as<std::string>();
+
+            boost::json::array lessons_array;
+            for (auto row : lessons_result)
+            {
+                boost::json::object lesson;
+                lesson["title"] = row["title"].as<std::string>();
+                lesson["content"] = row["content"].as<std::string>();
+                lesson["slide_order"] = row["slide_order"].as<int>();
+                lessons_array.push_back(lesson);
+            }
+
+            response_json["lessons"] = lessons_array; // Puts lessons_array in the reponse json
+
+            res.result(http::status::ok);
+            res.body() = boost::json::serialize(response_json);
+        }
+
         else
         {
             res.result(http::status::not_found);

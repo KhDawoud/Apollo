@@ -1,10 +1,26 @@
+//Problems Tables
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
+
 Rectangle {
     id: problemsPage
     color: "transparent"
+
+    Connections {
+        target: authManager
+        function onFetchProblemsListSuccess(problems) {
+            missionsModel.clear()
+            for (let i = 0; i < problems.length; i++) {
+                missionsModel.append(problems[i])
+            }
+            rebuildModel()
+        }
+        function onFetchProblemsListFailed(error) {
+            console.log("Failed to fetch problems: " + error)
+        }
+    }
 
     property string language: "Unknown"
     property string selectedTopic: "All"
@@ -14,6 +30,10 @@ Rectangle {
 
     // Once we generate the data we need all these will be populated with the
     // data from the DB but this is just dummy data to showcase it working
+    ListModel{
+        id: missionsModel
+    }
+
     ListModel {
         id: topicModel
         ListElement {
@@ -55,99 +75,6 @@ Rectangle {
         }
     }
 
-    ListModel {
-        id: missionsModel
-        ListElement {
-            name: "Array Traversal & State Tracking"
-            topic: "Arrays"
-            difficulty: "Easy"
-            diffColor: "#10B981"
-        }
-        ListElement {
-            name: "Sliding Window Fundamentals"
-            topic: "Strings"
-            difficulty: "Medium"
-            diffColor: "#F59E0B"
-        }
-        ListElement {
-            name: "Hash Maps for Fast Lookup"
-            topic: "Algorithms"
-            difficulty: "Easy"
-            diffColor: "#10B981"
-        }
-        ListElement {
-            name: "Two Pointers Technique"
-            topic: "Algorithms"
-            difficulty: "Medium"
-            diffColor: "#F59E0B"
-        }
-        ListElement {
-            name: "Recursion Basics"
-            topic: "Algorithms"
-            difficulty: "Medium"
-            diffColor: "#F59E0B"
-        }
-        ListElement {
-            name: "Stack Usage"
-            topic: "Algorithms"
-            difficulty: "Medium"
-            diffColor: "#F59E0B"
-        }
-        ListElement {
-            name: "Queue & BFS"
-            topic: "Graphs"
-            difficulty: "Hard"
-            diffColor: "#EF4444"
-        }
-        ListElement {
-            name: "Binary Search"
-            topic: "Algorithms"
-            difficulty: "Easy"
-            diffColor: "#10B981"
-        }
-        ListElement {
-            name: "Sorting Strategies"
-            topic: "Algorithms"
-            difficulty: "Medium"
-            diffColor: "#F59E0B"
-        }
-        ListElement {
-            name: "Greedy Algorithms"
-            topic: "Algorithms"
-            difficulty: "Hard"
-            diffColor: "#EF4444"
-        }
-        ListElement {
-            name: "Dynamic Programming Intro"
-            topic: "DP"
-            difficulty: "Hard"
-            diffColor: "#EF4444"
-        }
-        ListElement {
-            name: "String Parsing"
-            topic: "Strings"
-            difficulty: "Medium"
-            diffColor: "#F59E0B"
-        }
-        ListElement {
-            name: "Graph Representation"
-            topic: "Graphs"
-            difficulty: "Medium"
-            diffColor: "#F59E0B"
-        }
-        ListElement {
-            name: "Bit Manipulation"
-            topic: "Algorithms"
-            difficulty: "Hard"
-            diffColor: "#EF4444"
-        }
-        ListElement {
-            name: "Object Modeling"
-            topic: "OOP"
-            difficulty: "Medium"
-            diffColor: "#F59E0B"
-        }
-    }
 
     ListModel {
         id: filteredModel
@@ -160,11 +87,14 @@ Rectangle {
         for (let i = 0; i < missionsModel.count; i++) {
             let item = missionsModel.get(i);
             if ((selectedTopic === "All" || item.topic === selectedTopic) && (selectedDifficulty === "All" || item.difficulty === selectedDifficulty)) {
+                let color = item.difficulty === "Easy" ? "#10B981" :
+                            item.difficulty === "Medium" ? "#F59E0B" : "#EF4444"
                 temp.push({
+                    id: item.id,
                     name: item.name,
                     topic: item.topic,
                     difficulty: item.difficulty,
-                    diffColor: item.diffColor
+                    diffColor: color
                 });
             }
         }
@@ -174,11 +104,7 @@ Rectangle {
             let valB = b[sortKey];
 
             if (sortKey === "difficulty") {
-                const order = {
-                    "Easy": 1,
-                    "Medium": 2,
-                    "Hard": 3
-                };
+                const order = { "Easy": 1, "Medium": 2, "Hard": 3 };
                 valA = order[valA];
                 valB = order[valB];
                 return sortAscending ? valA - valB : valB - valA;
@@ -198,7 +124,7 @@ Rectangle {
     onSelectedDifficultyChanged: rebuildModel()
     onSortKeyChanged: rebuildModel()
     onSortAscendingChanged: rebuildModel()
-    Component.onCompleted: rebuildModel()
+    Component.onCompleted: authManager.fetchProblemsList(language)
 
     RowLayout {
         id: headerRow
@@ -524,7 +450,7 @@ Rectangle {
                         hoverEnabled: true
                         onDoubleClicked: {
                             problemsPage.StackView.view.push("MissionExplanation.qml", {
-                                "missionName": model.name,
+                                "problemId": model.id,
                                 "language": problemsPage.language
                             });
                         }
