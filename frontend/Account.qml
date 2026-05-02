@@ -6,8 +6,12 @@ Item {
     id: root
     width: parent.width
     height: parent.height
-    function openAccount() { accountWindow.open() }
-    function openSettings() { settingsWindow.open() }
+    function openAccount() {
+        accountWindow.open();
+    }
+    function openSettings() {
+        settingsWindow.open();
+    }
 
     Popup {
         id: accountWindow
@@ -21,8 +25,14 @@ Item {
 
         background: Rectangle {
             gradient: Gradient {
-                GradientStop { position: 0.0; color: "#1B3B5F" }
-                GradientStop { position: 1.0; color: "#112D4E" }
+                GradientStop {
+                    position: 0.0
+                    color: "#1B3B5F"
+                }
+                GradientStop {
+                    position: 1.0
+                    color: "#112D4E"
+                }
             }
             radius: 15
             border.color: "#3F72AF"
@@ -42,14 +52,29 @@ Item {
 
                 // Level Circle
                 Rectangle {
-                    width: 60; height: 60; radius: 30
+                    width: 60
+                    height: 60
+                    radius: 30
                     color: "#0F203D"
-                    border.color: "#4CC9FE"; border.width: 2
+                    border.color: "#4CC9FE"
+                    border.width: 2
 
                     Column {
                         anchors.centerIn: parent
-                        Text { text: "LVL"; color: "#3F72AF"; font.pointSize: 8; font.bold: true; anchors.horizontalCenter: parent.horizontalCenter }
-                        Text { text: "24"; color: "white"; font.pointSize: 16; font.bold: true; anchors.horizontalCenter: parent.horizontalCenter }
+                        Text {
+                            text: "LVL"
+                            color: "#3F72AF"
+                            font.pointSize: 8
+                            font.bold: true
+                            anchors.horizontalCenter: parent.horizontalCenter
+                        }
+                        Text {
+                            text: "24"
+                            color: "white"
+                            font.pointSize: 16
+                            font.bold: true
+                            anchors.horizontalCenter: parent.horizontalCenter
+                        }
                     }
                 }
 
@@ -80,14 +105,36 @@ Item {
                 Layout.topMargin: 10
                 Layout.alignment: Qt.AlignHCenter
 
-                Text { text: "USERNAME:"; color: "#3F72AF"; font.bold: true; font.pointSize: 10 }
-                Text { text: username; color: "white"; font.pointSize: 11; font.family: "Monospace" }
+                Text {
+                    text: "USERNAME:"
+                    color: "#3F72AF"
+                    font.bold: true
+                    font.pointSize: 10
+                }
+                Text {
+                    text: username
+                    color: "white"
+                    font.pointSize: 11
+                    font.family: "Monospace"
+                }
 
-                Text { text: "STREAK:"; color: "#3F72AF"; font.bold: true; font.pointSize: 10 }
-                Text { text: userstreak + " WINS"; color: "#ff4d4d"; font.pointSize: 11; font.bold: true }
+                Text {
+                    text: "STREAK:"
+                    color: "#3F72AF"
+                    font.bold: true
+                    font.pointSize: 10
+                }
+                Text {
+                    text: userstreak + " WINS"
+                    color: "#ff4d4d"
+                    font.pointSize: 11
+                    font.bold: true
+                }
             }
 
-            Item { Layout.fillHeight: true }
+            Item {
+                Layout.fillHeight: true
+            }
 
             Button {
                 text: "CLOSE"
@@ -121,8 +168,14 @@ Item {
 
         background: Rectangle {
             gradient: Gradient {
-                GradientStop { position: 0.0; color: "#1B3B5F" }
-                GradientStop { position: 1.0; color: "#112D4E" }
+                GradientStop {
+                    position: 0.0
+                    color: "#1B3B5F"
+                }
+                GradientStop {
+                    position: 1.0
+                    color: "#112D4E"
+                }
             }
             radius: 15
             border.color: "#3F72AF"
@@ -162,9 +215,9 @@ Item {
 
                         onCheckedChanged: {
                             if (checked) {
-                                window.visibility = Window.FullScreen
+                                window.visibility = Window.FullScreen;
                             } else {
-                                window.visibility = Window.Maximized
+                                window.visibility = Window.Maximized;
                             }
                         }
                         indicator: Rectangle {
@@ -187,7 +240,10 @@ Item {
                                 color: screencontrol.checked ? "#ffffff" : "#DBE2EF"
                                 // Smooth slide animation
                                 Behavior on x {
-                                    NumberAnimation { duration: 200; easing.type: Easing.InOutQuad }
+                                    NumberAnimation {
+                                        duration: 200
+                                        easing.type: Easing.InOutQuad
+                                    }
                                 }
                             }
                         }
@@ -197,7 +253,12 @@ Item {
                 // Volume Row
                 RowLayout {
                     Layout.fillWidth: true
-                    Text { text: "MASTER VOLUME"; color: "#DBE2EF"; font.pointSize: 11; Layout.fillWidth: true }
+                    Text {
+                        text: "MASTER VOLUME"
+                        color: "#DBE2EF"
+                        font.pointSize: 11
+                        Layout.fillWidth: true
+                    }
                     Slider {
                         id: volumeSlider
                         from: 0
@@ -238,7 +299,9 @@ Item {
                 }
             }
 
-            Item { Layout.fillHeight: true }
+            Item {
+                Layout.fillHeight: true
+            }
 
             Button {
                 text: "CLOSE"

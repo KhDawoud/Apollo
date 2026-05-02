@@ -1,4 +1,3 @@
-//Mission Explanation
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -21,24 +20,24 @@ Rectangle {
         target: authManager
 
         function onFetchProblemSuccess(problem) {
-            console.log("lessons length: " + problem.lessons.length)
-            missionName = problem.name
-            missionDescription = problem.description
-            initialCode = problem.initial_code
-            console.log("RAW CONTENT: " + problem.lessons[0].content)
+            console.log("lessons length: " + problem.lessons.length);
+            missionName = problem.name;
+            missionDescription = problem.description;
+            initialCode = problem.initial_code;
+            console.log("RAW CONTENT: " + problem.lessons[0].content);
 
-            pageModel.clear()
+            pageModel.clear();
             for (let i = 0; i < problem.lessons.length; i++) {
                 pageModel.append({
                     title: problem.lessons[i].title,
                     content: problem.lessons[i].content
-                })
+                });
             }
-            console.log("pageModel count after fill: " + pageModel.count)
+            console.log("pageModel count after fill: " + pageModel.count);
         }
 
         function onFetchProblemFailed(error) {
-            console.log("Failed to fetch problem: " + error)
+            console.log("Failed to fetch problem: " + error);
         }
     }
 
@@ -55,7 +54,9 @@ Rectangle {
             Button {
                 text: "← Back to Problems"
                 onClicked: explanationPage.StackView.view.pop()
-                background: Rectangle { color: "transparent" }
+                background: Rectangle {
+                    color: "transparent"
+                }
                 contentItem: Text {
                     text: parent.text
                     color: "#94A3B8"
@@ -64,7 +65,9 @@ Rectangle {
                 }
             }
 
-            Item { Layout.fillWidth: true }
+            Item {
+                Layout.fillWidth: true
+            }
 
             Text {
                 text: "BRIEFING: " + missionName.toUpperCase()
@@ -142,11 +145,7 @@ Rectangle {
                                             id: textBlock
                                             Text {
                                                 width: parent.width
-                                                text: displayText
-                                                    .replace(/&/g, "&amp;")
-                                                    .replace(/</g, "&lt;")
-                                                    .replace(/>/g, "&gt;")
-                                                    .replace(/\n/g, "<br>")
+                                                text: displayText.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>")
                                                 textFormat: Text.StyledText
                                                 color: "#D4D4D4"
                                                 font.pixelSize: 18
@@ -179,7 +178,9 @@ Rectangle {
                         text: "◀ Prev"
                         enabled: swipeView.currentIndex > 0
                         onClicked: swipeView.decrementCurrentIndex()
-                        background: Rectangle { color: "transparent" }
+                        background: Rectangle {
+                            color: "transparent"
+                        }
                         contentItem: Text {
                             text: parent.text
                             color: parent.enabled ? "#94A3B8" : "#334155"
@@ -198,7 +199,11 @@ Rectangle {
                             height: 10
                             radius: 5
                             color: index === indicator.currentIndex ? "#60A5FA" : "#334155"
-                            Behavior on color { ColorAnimation { duration: 150 } }
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: 150
+                                }
+                            }
                         }
                     }
 
@@ -206,7 +211,9 @@ Rectangle {
                         text: "Next ▶"
                         enabled: swipeView.currentIndex < pageModel.count - 1
                         onClicked: swipeView.incrementCurrentIndex()
-                        background: Rectangle { color: "transparent" }
+                        background: Rectangle {
+                            color: "transparent"
+                        }
                         contentItem: Text {
                             text: parent.text
                             color: parent.enabled ? "#94A3B8" : "#334155"
@@ -219,7 +226,9 @@ Rectangle {
 
         RowLayout {
             Layout.fillWidth: true
-            Item { Layout.fillWidth: true }
+            Item {
+                Layout.fillWidth: true
+            }
 
             Button {
                 text: "ENTER IDE ➔"
@@ -229,7 +238,11 @@ Rectangle {
                 background: Rectangle {
                     color: parent.down ? "#047857" : (parent.hovered ? "#34D399" : "#10B981")
                     radius: 8
-                    Behavior on color { ColorAnimation { duration: 100 } }
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: 100
+                        }
+                    }
                 }
 
                 contentItem: Text {
@@ -243,11 +256,12 @@ Rectangle {
 
                 onClicked: {
                     explanationPage.StackView.view.push("MissionSolver.qml", {
+                        "problemId": explanationPage.problemId.toString(),
                         "missionDescription": explanationPage.missionDescription,
                         "initialCode": explanationPage.initialCode.replace(/\\n/g, "\n"),
                         "language": explanationPage.language,
                         "missionName": explanationPage.missionName
-                    })
+                    });
                 }
             }
         }

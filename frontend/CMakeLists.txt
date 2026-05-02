@@ -30,7 +30,6 @@ qt_add_qml_module(appApollo
         Home.qml
         Signup.qml
         Welcome.qml
-        MissionExplanation3.qml
 
     RESOURCES
         images/logo.png

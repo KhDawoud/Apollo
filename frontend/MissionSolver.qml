@@ -1,4 +1,3 @@
-//Mission SOlver
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -9,14 +8,21 @@ Rectangle {
     id: solvingPage
     color: "transparent"
 
+    property string problemId: ""
+
     property bool showResultsModal: false
     property int displayedCases: 0
     property bool isEvaluating: false
 
-    property int totalCases: 12
-    property int passedCases: 7
+    property int totalCases: 0
+    property int passedCases: 0
+    property string runtimeMs: "0.00"
+    property string stdOutput: ""
 
-    property string language: "Unknown"
+    property bool isErrorState: false
+    property string errorOutput: ""
+
+    property string language: "cpp"
     property string missionName: ""
     property string missionDescription: ""
     property string initialCode: ""
@@ -41,6 +47,94 @@ Rectangle {
             solvingPage.aiFullResponse = "⚠️ " + errorMessage;
             aiTypewriterTimer.start();
         }
+    }
+
+    // i didnt feel like it was worth it to write a whole manager object so I just coded it straight in
+    // since were just making one post request then doing formatting
+    function submitCode(isLaunchMode) {
+        solvingPage.isEvaluating = true;
+        solvingPage.isErrorState = false;
+        solvingPage.errorOutput = "";
+        solvingPage.stdOutput = "";
+        solvingPage.displayedCases = 0;
+
+        if (!isLaunchMode) {
+            solvingPage.showResultsModal = true;
+        }
+
+        launchButton.launchState = "evaluating";
+
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "http://localhost:8080/api/submit_code");
+        xhr.setRequestHeader("Content-Type", "application/json");
+
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                solvingPage.isEvaluating = false;
+
+                if (xhr.status === 200) {
+                    try {
+                        var response = JSON.parse(xhr.responseText);
+
+                        if (response.status === "error" && response.type !== "test_failure") {
+                            solvingPage.isErrorState = true;
+                            solvingPage.errorOutput = response.message;
+                            launchButton.launchState = "failed";
+                            if (isLaunchMode)
+                                solvingPage.showResultsModal = true;
+                        } else {
+                            var results = response.test_results;
+                            solvingPage.totalCases = results.tests;
+                            solvingPage.passedCases = results.tests - results.failures;
+
+                            var timeInSeconds = parseFloat(results.time);
+                            solvingPage.runtimeMs = (timeInSeconds * 1000).toFixed(2);
+
+                            if (response.output !== undefined) {
+                                solvingPage.stdOutput = response.output;
+                            }
+
+                            launchButton.launchState = (solvingPage.passedCases === solvingPage.totalCases) ? "success" : "failed";
+
+                            if (isLaunchMode) {
+                                if (solvingPage.passedCases === solvingPage.totalCases) {
+                                    launchSuccessReturnTimer.start();
+                                } else {
+                                    solvingPage.showResultsModal = true;
+                                }
+                            }
+
+                            simulationTimer.start();
+                        }
+                    } catch (e) {
+                        solvingPage.isErrorState = true;
+                        solvingPage.errorOutput = "Failed to parse server response.";
+                        launchButton.launchState = "failed";
+                        if (isLaunchMode)
+                            solvingPage.showResultsModal = true;
+                    }
+                } else {
+                    solvingPage.isErrorState = true;
+                    var serverMsg = "Server Error: " + xhr.status;
+                    try {
+                        serverMsg = JSON.parse(xhr.responseText).message;
+                    } catch (e) {}
+                    solvingPage.errorOutput = serverMsg;
+                    launchButton.launchState = "failed";
+                    if (isLaunchMode)
+                        solvingPage.showResultsModal = true;
+                }
+
+                launchResetTimer.start();
+            }
+        };
+
+        var payload = {
+            "language": solvingPage.language,
+            "code": myCodeEditor.text,
+            "problem_id": solvingPage.problemId
+        };
+        xhr.send(JSON.stringify(payload));
     }
 
     ColumnLayout {
@@ -88,24 +182,18 @@ Rectangle {
             ScrollView {
                 id: descScroll
                 anchors.fill: parent
-                padding: 5
+                anchors.margins: 10
+                padding: 15
                 contentHeight: descriptionText.height + 40
 
                 Text {
                     id: descriptionText
-                    width: descScroll.availableWidth
-
-                    text: missionDescription
-                                .replace(/&/g, "&amp;")
-                                .replace(/</g, "&lt;")
-                                .replace(/>/g, "&gt;")
-                                .replace(/\n/g, "<br>")
-
+                    width: descScroll.availableWidth - 10
+                    text: missionDescription.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>")
                     color: "#CBD5E1"
                     font.pixelSize: 16
                     wrapMode: Text.WordWrap
                     lineHeight: 1.4
-
                     height: implicitHeight
                 }
             }
@@ -133,7 +221,6 @@ Rectangle {
                 text: "✨ Ask AI"
                 Layout.preferredWidth: 130
                 Layout.preferredHeight: 44
-
                 scale: pressed ? 0.95 : (hovered ? 1.03 : 1.0)
                 Behavior on scale {
                     NumberAnimation {
@@ -155,7 +242,6 @@ Rectangle {
                     radius: 22
                     border.color: "#8B5CF6"
                     border.width: parent.hovered ? 2 : 1
-
                     gradient: Gradient {
                         orientation: Gradient.Horizontal
                         GradientStop {
@@ -167,7 +253,6 @@ Rectangle {
                             color: parent.pressed ? "#1D4ED8" : (parent.hovered ? "#2563EB" : "#1E3A8A")
                         }
                     }
-
                     Behavior on border.width {
                         NumberAnimation {
                             duration: 150
@@ -195,7 +280,6 @@ Rectangle {
                 text: "Run Code ▶"
                 Layout.preferredWidth: 130
                 Layout.preferredHeight: 44
-
                 contentItem: Text {
                     text: parent.text
                     color: "white"
@@ -204,28 +288,18 @@ Rectangle {
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }
-
                 background: Rectangle {
                     color: parent.pressed ? "#1D4ED8" : (parent.hovered ? "#2563EB" : "#3B82F6")
                     radius: 8
                 }
-
-                onClicked: {
-                    solvingPage.displayedCases = 0;
-                    solvingPage.isEvaluating = true;
-                    solvingPage.showResultsModal = true;
-                    simulationTimer.start();
-                }
+                onClicked: solvingPage.submitCode(false) // the bool here just distingushes between run and launch
             }
 
             Button {
                 id: launchButton
-
-                property string launchState: "idle" 
-
+                property string launchState: "idle"
                 Layout.preferredWidth: (launchState === "success" || launchState === "failed") ? 44 : 150
                 Layout.preferredHeight: 44
-
                 enabled: launchState === "idle"
 
                 Behavior on Layout.preferredWidth {
@@ -237,7 +311,6 @@ Rectangle {
 
                 contentItem: Item {
                     anchors.fill: parent
-
                     BusyIndicator {
                         anchors.centerIn: parent
                         width: 24
@@ -245,7 +318,6 @@ Rectangle {
                         running: launchButton.launchState === "evaluating"
                         visible: launchButton.launchState === "evaluating"
                     }
-
                     Text {
                         anchors.centerIn: parent
                         text: {
@@ -262,7 +334,6 @@ Rectangle {
                         font.pixelSize: (launchButton.launchState === "success" || launchButton.launchState === "failed") ? 22 : 16
                         font.letterSpacing: launchButton.launchState === "idle" ? 1.5 : 0
                         visible: launchButton.launchState !== "evaluating"
-
                         Behavior on font.pixelSize {
                             NumberAnimation {
                                 duration: 200
@@ -272,20 +343,16 @@ Rectangle {
                 }
 
                 background: Rectangle {
-
                     radius: (launchButton.launchState === "success" || launchButton.launchState === "failed") ? 22 : 8
-
                     color: {
                         if (launchButton.launchState === "evaluating")
-                            return "#3B82F6"; 
+                            return "#3B82F6";
                         if (launchButton.launchState === "success")
                             return "#10B981";
                         if (launchButton.launchState === "failed")
                             return "#EF4444";
-
                         return parent.pressed ? "#047857" : (parent.hovered ? "#059669" : "#10B981");
                     }
-
                     Behavior on radius {
                         NumberAnimation {
                             duration: 350
@@ -299,39 +366,29 @@ Rectangle {
                     }
                 }
 
-                onClicked: {
-                    launchButton.launchState = "evaluating";
-
-                    // ill connect the testing logic here once we fix the problems
-
-                    launchMockTimer.start();
-                }
+                onClicked: solvingPage.submitCode(true)
             }
         }
     }
 
-    // timers for animations
-
-    // will remove after i connect tests backend for now it just randomly fails or passes
+    // send back to table if tests work
     Timer {
-        id: launchMockTimer
-        interval: 1500 
+        id: launchSuccessReturnTimer
+        interval: 1500
         onTriggered: {
-            var passed = Math.random() > 0.5;
-            launchButton.launchState = passed ? "success" : "failed";
-            launchResetTimer.start();
+            solvingPage.StackView.view.pop();
+            solvingPage.StackView.view.pop();
         }
     }
 
     Timer {
         id: launchResetTimer
-        interval: 2500
+        interval: 3500
         onTriggered: {
             launchButton.launchState = "idle";
         }
     }
 
-    // simulates the tests occuring
     Timer {
         id: simulationTimer
         interval: 100
@@ -340,13 +397,11 @@ Rectangle {
             if (solvingPage.displayedCases < solvingPage.totalCases) {
                 solvingPage.displayedCases++;
             } else {
-                solvingPage.isEvaluating = false;
                 stop();
             }
         }
     }
 
-    // simulates ai typing out response
     Timer {
         id: aiTypewriterTimer
         interval: 25
@@ -361,9 +416,7 @@ Rectangle {
         }
     }
 
-    // the popups
-
-    //ai
+    // ai assistant
     Rectangle {
         id: aiOverlay
         anchors.fill: parent
@@ -496,7 +549,6 @@ Rectangle {
                         color: parent.pressed ? "#2563EB" : (parent.hovered ? "#3B82F6" : "#1D4ED8")
                         radius: 22
                     }
-
                     onClicked: {
                         solvingPage.showAIModal = false;
                     }
@@ -505,12 +557,11 @@ Rectangle {
         }
     }
 
-    // tests
+    // tests modal
     Rectangle {
         id: resultsOverlay
         anchors.fill: parent
         color: Qt.rgba(0.05, 0.07, 0.12, 0.85)
-
         opacity: solvingPage.showResultsModal ? 1.0 : 0.0
         visible: opacity > 0
         Behavior on opacity {
@@ -530,12 +581,12 @@ Rectangle {
 
         Rectangle {
             id: resultsModal
-            width: 480
-            height: 420
+            width: 550
+            height: (solvingPage.isErrorState || solvingPage.stdOutput !== "") ? 600 : 420
             anchors.centerIn: parent
             color: "#0F172A"
             radius: 16
-            border.color: solvingPage.isEvaluating ? "#334155" : (passedCases === totalCases ? "#059669" : "#B45309")
+            border.color: solvingPage.isEvaluating ? "#334155" : (solvingPage.isErrorState ? "#991B1B" : (passedCases === totalCases ? "#059669" : "#B45309"))
             border.width: 2
 
             Behavior on border.color {
@@ -543,7 +594,6 @@ Rectangle {
                     duration: 400
                 }
             }
-
             scale: solvingPage.showResultsModal ? 1.0 : 0.85
             Behavior on scale {
                 NumberAnimation {
@@ -559,15 +609,15 @@ Rectangle {
             ColumnLayout {
                 anchors.fill: parent
                 anchors.margins: 30
-                spacing: 20
+                spacing: 16
 
                 RowLayout {
                     Layout.alignment: Qt.AlignHCenter
                     spacing: 10
-
                     Text {
-                        text: solvingPage.isEvaluating ? "Evaluating..." : (passedCases === totalCases ? "Mission Accomplished" : "Partial Success")
-                        color: solvingPage.isEvaluating ? "#60A5FA" : (passedCases === totalCases ? "#34D399" : "#F59E0B")
+                        text: solvingPage.isEvaluating ? "Evaluating..." : (solvingPage.isErrorState ? "Execution Failed" : (passedCases === totalCases ? "Mission Accomplished" : "Partial Success"))
+
+                        color: solvingPage.isEvaluating ? "#60A5FA" : (solvingPage.isErrorState ? "#EF4444" : (passedCases === totalCases ? "#34D399" : "#F59E0B"))
                         font.pixelSize: 26
                         font.bold: true
                         font.letterSpacing: 1.0
@@ -580,7 +630,9 @@ Rectangle {
                     color: "#1E293B"
                 }
 
+                // animation to show the tests failed and passed
                 GridLayout {
+                    visible: !solvingPage.isErrorState
                     Layout.alignment: Qt.AlignHCenter
                     columns: 6
                     rowSpacing: 12
@@ -588,7 +640,6 @@ Rectangle {
 
                     Repeater {
                         model: solvingPage.totalCases
-
                         Rectangle {
                             width: 36
                             height: 36
@@ -598,7 +649,6 @@ Rectangle {
                                     return "#1E293B";
                                 return index < solvingPage.passedCases ? "#10B981" : "#EF4444";
                             }
-
                             scale: index < solvingPage.displayedCases ? 1.0 : 0.4
                             opacity: index < solvingPage.displayedCases ? 1.0 : 0.3
                             Behavior on scale {
@@ -625,8 +675,9 @@ Rectangle {
                 }
 
                 Rectangle {
+                    visible: !solvingPage.isErrorState
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 80
+                    Layout.preferredHeight: 70
                     color: "#131E30"
                     radius: 10
                     border.color: "#1E293B"
@@ -641,7 +692,6 @@ Rectangle {
                         anchors.fill: parent
                         anchors.margins: 15
                         spacing: 20
-
                         ColumnLayout {
                             Layout.fillWidth: true
                             Text {
@@ -656,13 +706,11 @@ Rectangle {
                                 font.bold: true
                             }
                         }
-
                         Rectangle {
                             width: 1
                             Layout.fillHeight: true
                             color: "#1E293B"
                         }
-
                         ColumnLayout {
                             Layout.fillWidth: true
                             Text {
@@ -671,28 +719,7 @@ Rectangle {
                                 font.pixelSize: 12
                             }
                             Text {
-                                text: "450 ns"
-                                color: "white"
-                                font.pixelSize: 18
-                                font.bold: true
-                            }
-                        }
-
-                        Rectangle {
-                            width: 1
-                            Layout.fillHeight: true
-                            color: "#1E293B"
-                        }
-
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            Text {
-                                text: "💾 Memory"
-                                color: "#94A3B8"
-                                font.pixelSize: 12
-                            }
-                            Text {
-                                text: "1.2 MB"
+                                text: solvingPage.runtimeMs + " ms"
                                 color: "white"
                                 font.pixelSize: 18
                                 font.bold: true
@@ -701,8 +728,62 @@ Rectangle {
                     }
                 }
 
-                Item {
-                    Layout.fillHeight: true
+
+                // output terminal
+                Rectangle {
+                    visible: !solvingPage.isEvaluating && (solvingPage.isErrorState || solvingPage.stdOutput !== "")
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true 
+                    color: "#0B1120"
+                    radius: 8
+                    border.color: solvingPage.isErrorState ? "#7F1D1D" : "#334155"
+
+                    ColumnLayout {
+                        anchors.fill: parent
+                        spacing: 0
+
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 30
+                            color: solvingPage.isErrorState ? "#450A0A" : "#1E293B"
+                            radius: 8
+
+                            Rectangle {
+                                width: parent.width
+                                height: 10
+                                anchors.bottom: parent.bottom
+                                color: parent.color
+                            }
+
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                anchors.left: parent.left
+                                anchors.leftMargin: 12
+                                text: solvingPage.isErrorState ? "CRASH LOG" : "STANDARD OUTPUT"
+                                color: "#94A3B8"
+                                font.pixelSize: 11
+                                font.bold: true
+                                font.letterSpacing: 1
+                            }
+                        }
+
+                        ScrollView {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            clip: true
+
+                            Text {
+                                width: parent.width
+                                padding: 15
+                                text: solvingPage.isErrorState ? solvingPage.errorOutput : solvingPage.stdOutput
+                                color: solvingPage.isErrorState ? "#FCA5A5" : "#CBD5E1"
+                                font.family: "Monospace"
+                                font.pixelSize: 13
+                                wrapMode: Text.Wrap
+                                lineHeight: 1.2
+                            }
+                        }
+                    }
                 }
 
                 Button {
@@ -710,7 +791,6 @@ Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 48
                     enabled: !solvingPage.isEvaluating
-
                     contentItem: Text {
                         text: parent.text
                         color: solvingPage.isEvaluating ? "#94A3B8" : "white"
@@ -719,13 +799,11 @@ Rectangle {
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                     }
-
                     background: Rectangle {
                         color: parent.pressed ? "#334155" : (parent.hovered && !solvingPage.isEvaluating ? "#475569" : "#1E293B")
                         radius: 8
                         border.color: solvingPage.isEvaluating ? "#334155" : "#64748B"
                     }
-
                     onClicked: solvingPage.showResultsModal = false
                 }
             }

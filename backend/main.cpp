@@ -1,4 +1,3 @@
-//Backend
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 #include <boost/beast/version.hpp>
@@ -264,7 +263,7 @@ void handle_submit_code(const http::request<http::string_body> &req, http::respo
     std::string language = parsed_body.at("language").as_string().c_str();
 
     // since google test only works for c++ im just gonna send an error message for now if its another language
-    if (language != "cpp")
+    if (language != "cpp" && language != "C++")
     {
         res.result(http::status::bad_request);
         res.body() = R"({"status": "error", "message": "Unsupported language. Currently, only C++ is supported."})";
@@ -273,6 +272,13 @@ void handle_submit_code(const http::request<http::string_body> &req, http::respo
 
     std::string user_code = parsed_body.at("code").as_string().c_str();
     std::string problem_id = parsed_body.at("problem_id").as_string().c_str();
+
+    if (problem_id.empty())
+    {
+        res.result(http::status::bad_request);
+        res.body() = R"({"status": "error", "message": "Problem ID is missing from the request."})";
+        return;
+    }
 
     // query database for the problems tests
     std::string test_code;
@@ -299,7 +305,9 @@ void handle_submit_code(const http::request<http::string_body> &req, http::respo
     std::filesystem::path work_dir = std::filesystem::temp_directory_path() / "apollo_rce" / session_id;
     std::filesystem::create_directories(work_dir);
 
-    std::ofstream(work_dir / "user_code.cpp") << user_code;
+    // there was a bug where the main in tests and user code conflicted so I explicitly define them
+    std::ofstream(work_dir / "user_code.cpp") << "#define main user_main\n"
+                                              << user_code;
     std::ofstream(work_dir / "unit_tests.cpp") << test_code;
 
     // this is a script to run and test the code then save the output in a log file
@@ -345,9 +353,18 @@ void handle_submit_code(const http::request<http::string_body> &req, http::respo
             std::string res_str((std::istreambuf_iterator<char>(res_file)), std::istreambuf_iterator<char>());
             boost::json::value gtest_data = boost::json::parse(res_str);
 
+            // get code output so we can show user
+            std::string out_str = "";
+            if (std::filesystem::exists(work_dir / "run_out.log"))
+            {
+                std::ifstream out_file(work_dir / "run_out.log");
+                out_str = std::string((std::istreambuf_iterator<char>(out_file)), std::istreambuf_iterator<char>());
+            }
+
             response_json["status"] = (exit_code == 0) ? "success" : "error";
             response_json["type"] = (exit_code == 0) ? "all_passed" : "test_failure";
             response_json["test_results"] = gtest_data;
+            response_json["output"] = out_str;
         }
         else
         {
@@ -405,7 +422,8 @@ void handle_request(const http::request<http::string_body> &req, http::response<
         {
             handle_ask_ai(req, res);
         }
-        else if (req.method() == http::verb::get && req.target().starts_with("/api/problems")){
+        else if (req.method() == http::verb::get && req.target().starts_with("/api/problems"))
+        {
             std::string target = std::string(req.target());
             std::string language = target.substr(target.find("=") + 1);
 
@@ -417,9 +435,9 @@ void handle_request(const http::request<http::string_body> &req, http::response<
 
             pqxx::result R = N.exec(query);
 
-
             boost::json::array results;
-            for (auto row : R) {
+            for (auto row : R)
+            {
                 boost::json::object item;
                 item["id"] = row["id"].as<int>();
                 item["name"] = row["name"].as<std::string>();
@@ -429,7 +447,6 @@ void handle_request(const http::request<http::string_body> &req, http::response<
             }
             res.result(http::status::ok);
             res.body() = boost::json::serialize(results);
-
         }
 
         else if (req.method() == http::verb::get && req.target().starts_with("/api/problem?"))
