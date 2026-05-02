@@ -12,9 +12,30 @@ Rectangle {
         target: authManager
         function onFetchProblemsListSuccess(problems) {
             missionsModel.clear()
+            topicModel.clear()
+            difficultyModel.clear()
+            topicModel.append({ name: "All" })
+            difficultyModel.append({ name: "All" })
+
+            let seenTopic = {}
+            let seenDifficulty = {}
+
             for (let i = 0; i < problems.length; i++) {
                 missionsModel.append(problems[i])
+
+                let topic = problems[i].topic
+                if (!seenTopic[topic]) {
+                    seenTopic[topic] = true
+                    topicModel.append({ name: topic })
+                }
+
+                let difficulty = problems[i].difficulty
+                if (!seenDifficulty[difficulty]) {
+                    seenDifficulty[difficulty] = true
+                    difficultyModel.append({ name: difficulty })
+                }
             }
+
             rebuildModel()
         }
         function onFetchProblemsListFailed(error) {
@@ -36,28 +57,9 @@ Rectangle {
 
     ListModel {
         id: topicModel
-        ListElement {
-            name: "All"
-        }
-        ListElement {
-            name: "Arrays"
-        }
-        ListElement {
-            name: "Strings"
-        }
-        ListElement {
-            name: "Algorithms"
-        }
-        ListElement {
-            name: "Graphs"
-        }
-        ListElement {
-            name: "DP"
-        }
-        ListElement {
-            name: "OOP"
-        }
     }
+
+
 
     ListModel {
         id: difficultyModel
