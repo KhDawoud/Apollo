@@ -62,69 +62,87 @@ Rectangle {
             solvingPage.showResultsModal = true;
         }
 
-        launchButton.launchState = "evaluating";
+        if (isLaunchMode) {
+            launchButton.launchState = "evaluating";
+        }
 
         var xhr = new XMLHttpRequest();
         xhr.open("POST", "http://localhost:8080/api/submit_code");
         xhr.setRequestHeader("Content-Type", "application/json");
 
         xhr.onreadystatechange = function () {
-            if (xhr.readyState === XMLHttpRequest.DONE) {
-                solvingPage.isEvaluating = false;
+            if (xhr.readyState !== XMLHttpRequest.DONE)
+                return;
 
-                if (xhr.status === 200) {
-                    try {
-                        var response = JSON.parse(xhr.responseText);
+            solvingPage.isEvaluating = false;
 
-                        if (response.status === "error" && response.type !== "test_failure") {
-                            solvingPage.isErrorState = true;
-                            solvingPage.errorOutput = response.message;
+            if (xhr.status === 200) {
+                try {
+                    var response = JSON.parse(xhr.responseText);
+
+                    if (response.status === "error" && response.type !== "test_failure") {
+                        solvingPage.isErrorState = true;
+                        solvingPage.errorOutput = response.message;
+
+                        if (isLaunchMode) {
                             launchButton.launchState = "failed";
-                            if (isLaunchMode)
-                                solvingPage.showResultsModal = true;
-                        } else {
-                            var results = response.test_results;
-                            solvingPage.totalCases = results.tests;
-                            solvingPage.passedCases = results.tests - results.failures;
+                            solvingPage.showResultsModal = true;
+                        }
+                    } else {
+                        var results = response.test_results;
 
-                            var timeInSeconds = parseFloat(results.time);
-                            solvingPage.runtimeMs = (timeInSeconds * 1000).toFixed(2);
+                        solvingPage.totalCases = results.tests;
+                        solvingPage.passedCases = results.tests - results.failures;
 
-                            if (response.output !== undefined) {
-                                solvingPage.stdOutput = response.output;
-                            }
+                        var timeInSeconds = parseFloat(results.time);
 
+                        solvingPage.runtimeMs = (timeInSeconds * 1000).toFixed(2);
+
+                        if (response.output !== undefined) {
+                            solvingPage.stdOutput = response.output;
+                        }
+
+                        if (isLaunchMode) {
                             launchButton.launchState = (solvingPage.passedCases === solvingPage.totalCases) ? "success" : "failed";
 
-                            if (isLaunchMode) {
-                                if (solvingPage.passedCases === solvingPage.totalCases) {
-                                    launchSuccessReturnTimer.start();
-                                } else {
-                                    solvingPage.showResultsModal = true;
-                                }
+                            if (solvingPage.passedCases === solvingPage.totalCases) {
+                                authManager.fetchProblemsList(solvingPage.language);
+
+                                launchSuccessReturnTimer.start();
+                            } else {
+                                solvingPage.showResultsModal = true;
                             }
-
-                            simulationTimer.start();
                         }
-                    } catch (e) {
-                        solvingPage.isErrorState = true;
-                        solvingPage.errorOutput = "Failed to parse server response.";
-                        launchButton.launchState = "failed";
-                        if (isLaunchMode)
-                            solvingPage.showResultsModal = true;
-                    }
-                } else {
-                    solvingPage.isErrorState = true;
-                    var serverMsg = "Server Error: " + xhr.status;
-                    try {
-                        serverMsg = JSON.parse(xhr.responseText).message;
-                    } catch (e) {}
-                    solvingPage.errorOutput = serverMsg;
-                    launchButton.launchState = "failed";
-                    if (isLaunchMode)
-                        solvingPage.showResultsModal = true;
-                }
 
+                        simulationTimer.start();
+                    }
+                } catch (e) {
+                    solvingPage.isErrorState = true;
+                    solvingPage.errorOutput = "Failed to parse server response.";
+
+                    if (isLaunchMode) {
+                        launchButton.launchState = "failed";
+                        solvingPage.showResultsModal = true;
+                    }
+                }
+            } else {
+                solvingPage.isErrorState = true;
+
+                var serverMsg = "Server Error: " + xhr.status;
+
+                try {
+                    serverMsg = JSON.parse(xhr.responseText).message;
+                } catch (e) {}
+
+                solvingPage.errorOutput = serverMsg;
+
+                if (isLaunchMode) {
+                    launchButton.launchState = "failed";
+                    solvingPage.showResultsModal = true;
+                }
+            }
+
+            if (isLaunchMode) {
                 launchResetTimer.start();
             }
         };
@@ -132,8 +150,11 @@ Rectangle {
         var payload = {
             "language": solvingPage.language,
             "code": myCodeEditor.text,
-            "problem_id": solvingPage.problemId
+            "problem_id": solvingPage.problemId,
+            "username": window.username,
+            "is_launch": isLaunchMode
         };
+
         xhr.send(JSON.stringify(payload));
     }
 
@@ -728,12 +749,11 @@ Rectangle {
                     }
                 }
 
-
                 // output terminal
                 Rectangle {
                     visible: !solvingPage.isEvaluating && (solvingPage.isErrorState || solvingPage.stdOutput !== "")
                     Layout.fillWidth: true
-                    Layout.fillHeight: true 
+                    Layout.fillHeight: true
                     color: "#0B1120"
                     radius: 8
                     border.color: solvingPage.isErrorState ? "#7F1D1D" : "#334155"

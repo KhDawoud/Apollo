@@ -35,7 +35,6 @@ signals:
     void fetchProblemSuccess(QVariantMap problem);
     void fetchProblemFailed(const QString &errorMessage);
 
-
 private slots:
     void onLoginReply(QNetworkReply *reply);
     void onSignupReply(QNetworkReply *reply);
@@ -44,6 +43,7 @@ private slots:
 
 private:
     QNetworkAccessManager *networkManager;
+    QString currentUsername;
 };
 
 #endif // AUTHMANAGER_H

@@ -21,6 +21,7 @@
 #include <vector>
 #include <filesystem>
 #include <cstdlib>
+#include <sys/wait.h>
 
 namespace beast = boost::beast;
 namespace http = beast::http;
@@ -261,6 +262,8 @@ void handle_submit_code(const http::request<http::string_body> &req, http::respo
 {
     boost::json::value parsed_body = boost::json::parse(req.body());
     std::string language = parsed_body.at("language").as_string().c_str();
+    std::string username = parsed_body.at("username").as_string().c_str();
+    bool is_launch = parsed_body.at("is_launch").as_bool();
 
     // since google test only works for c++ im just gonna send an error message for now if its another language
     if (language != "cpp" && language != "C++")
@@ -325,7 +328,8 @@ void handle_submit_code(const http::request<http::string_body> &req, http::respo
                              "-v " +
                              work_dir.string() + ":/workspace:rw -w /workspace gtest-env bash run.sh";
 
-    int exit_code = std::system(docker_cmd.c_str());
+    int raw_status = std::system(docker_cmd.c_str());
+    int exit_code = WIFEXITED(raw_status) ? WEXITSTATUS(raw_status) : -1;
 
     boost::json::object response_json;
 
@@ -359,6 +363,25 @@ void handle_submit_code(const http::request<http::string_body> &req, http::respo
             {
                 std::ifstream out_file(work_dir / "run_out.log");
                 out_str = std::string((std::istreambuf_iterator<char>(out_file)), std::istreambuf_iterator<char>());
+            }
+
+            // everything succeeded so add the submission to the user
+            if (exit_code == 0 && is_launch)
+            {
+                pqxx::connection C(db_url);
+                pqxx::work W(C);
+
+                std::string insertQuery =
+                    "INSERT INTO user_submissions (user_id, problem_id) "
+                    "SELECT id, " +
+                    W.quote(problem_id) + " "
+                                          "FROM users "
+                                          "WHERE username = " +
+                    W.quote(username) + " "
+                                        "ON CONFLICT (user_id, problem_id) DO NOTHING;";
+
+                W.exec(insertQuery);
+                W.commit();
             }
 
             response_json["status"] = (exit_code == 0) ? "success" : "error";
@@ -422,29 +445,72 @@ void handle_request(const http::request<http::string_body> &req, http::response<
         {
             handle_ask_ai(req, res);
         }
-        else if (req.method() == http::verb::get && req.target().starts_with("/api/problems"))
+        else if (req.method() == http::verb::get &&
+                 req.target().starts_with("/api/problems"))
         {
             std::string target = std::string(req.target());
-            std::string language = target.substr(target.find("=") + 1);
+            std::string language;
+            std::string username;
+
+            size_t langPos = target.find("language=");
+            size_t userPos = target.find("username=");
+
+            if (langPos != std::string::npos)
+            {
+                size_t end = target.find("&", langPos);
+                language = target.substr(
+                    langPos + 9,
+                    end == std::string::npos
+                        ? std::string::npos
+                        : end - (langPos + 9));
+            }
+
+            if (userPos != std::string::npos)
+            {
+                username = target.substr(userPos + 9);
+            }
 
             pqxx::connection C(db_url);
             pqxx::nontransaction N(C);
 
+            // gets problem data and whether this user has completed it as a bool
             std::string query =
-                "SELECT id, name, topic, difficulty FROM problems WHERE language =" + N.quote(language);
+                "SELECT "
+                "p.id, "
+                "p.name, "
+                "p.topic, "
+                "p.difficulty, "
+                "CASE WHEN us.problem_id IS NOT NULL "
+                "THEN true ELSE false END AS completed "
+                "FROM problems p "
+                "LEFT JOIN users u "
+                "ON u.username = " +
+                N.quote(username) + " "
+                                    "LEFT JOIN user_submissions us "
+                                    "ON us.user_id = u.id "
+                                    "AND us.problem_id = p.id "
+                                    "WHERE p.language = " +
+                N.quote(language) + ";";
 
             pqxx::result R = N.exec(query);
 
             boost::json::array results;
+
             for (auto row : R)
             {
                 boost::json::object item;
+
                 item["id"] = row["id"].as<int>();
                 item["name"] = row["name"].as<std::string>();
                 item["topic"] = row["topic"].as<std::string>();
                 item["difficulty"] = row["difficulty"].as<std::string>();
+
+                item["completed"] =
+                    row["completed"].as<bool>();
+
                 results.push_back(item);
             }
+
             res.result(http::status::ok);
             res.body() = boost::json::serialize(results);
         }
