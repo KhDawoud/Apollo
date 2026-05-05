@@ -102,6 +102,11 @@ Rectangle {
                             solvingPage.stdOutput = response.output;
                         }
 
+                        if (response.new_xp !== undefined && response.new_streak !== undefined) {
+                            window.userxp = response.new_xp;
+                            window.userstreak = response.new_streak;
+                        }
+
                         if (isLaunchMode) {
                             launchButton.launchState = (solvingPage.passedCases === solvingPage.totalCases) ? "success" : "failed";
 

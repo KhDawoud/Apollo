@@ -1,13 +1,19 @@
-
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+
 Rectangle {
     id: rect
     color: "transparent"
     visible: mainNavBar.currentIndex === 2
     property bool isLoading: true
 
+    onVisibleChanged: {
+        if (visible && !filterBar.showingFriends) {
+            rect.isLoading = true;
+            authManager.fetchleaderboard();
+        }
+    }
 
     Text {
         id: titleText
@@ -35,7 +41,7 @@ Rectangle {
             height: parent.height
             width: parent.width - 280
 
-            color: Qt.rgba(17/255, 45/255, 78/255, 0.5) // makes the box have 50% opacity
+            color: Qt.rgba(17 / 255, 45 / 255, 78 / 255, 0.5) // makes the box have 50% opacity
             radius: 20
             border.color: "#3F72AF"
             border.width: 2
@@ -57,9 +63,9 @@ Rectangle {
                     flat: true
                     onClicked: {
                         if (!rect.isLoading) {
-                            filterBar.showingFriends = false
-                            rect.isLoading = true
-                            authManager.fetchleaderboard()
+                            filterBar.showingFriends = false;
+                            rect.isLoading = true;
+                            authManager.fetchleaderboard();
                         }
                     }
                     contentItem: Text {
@@ -74,9 +80,9 @@ Rectangle {
                     id: friendsTab
                     text: "FRIENDS"
                     flat: true
-                    onClicked:{
-                        filterBar.showingFriends = true
-                        rect.isLoading = false
+                    onClicked: {
+                        filterBar.showingFriends = true;
+                        rect.isLoading = false;
                     }
                     contentItem: Text {
                         text: parent.text
@@ -96,11 +102,21 @@ Rectangle {
                 x: filterBar.showingFriends ? (filterBar.x + friendsTab.x) : (filterBar.x + globalTab.x)
 
                 // Animations
-                Behavior on x { NumberAnimation { duration: 200; easing.type: Easing.OutQuad } }
-                Behavior on width { NumberAnimation { duration: 200; easing.type: Easing.OutQuad } }
+                Behavior on x {
+                    NumberAnimation {
+                        duration: 200
+                        easing.type: Easing.OutQuad
+                    }
+                }
+                Behavior on width {
+                    NumberAnimation {
+                        duration: 200
+                        easing.type: Easing.OutQuad
+                    }
+                }
 
                 Component.onCompleted: {
-                    x = filterBar.showingFriends ? (filterBar.x + friendsTab.x) : (filterBar.x + globalTab.x)
+                    x = filterBar.showingFriends ? (filterBar.x + friendsTab.x) : (filterBar.x + globalTab.x);
                 }
             }
             //Column Headers rank,streak and score
@@ -171,17 +187,29 @@ Rectangle {
             }
             ListModel {
                 id: globalModel
-                ListElement { username: "Loading..."; xp: 0; streak: 0 }
+                ListElement {
+                    username: "Loading..."
+                    xp: 0
+                    streak: 0
+                }
             }
 
             ListModel {
                 id: friendsModel
-                ListElement { username: "Friend 1"; streak: "10"; xp: "8030" }
-                ListElement { username: "ME"; streak: "7"; xp: "7,450" }
+                ListElement {
+                    username: "Friend 1"
+                    streak: "10"
+                    xp: "8030"
+                }
+                ListElement {
+                    username: "ME"
+                    streak: "7"
+                    xp: "7,450"
+                }
             }
 
             ListView {
-                id:list
+                id: list
                 anchors.top: headerRow.bottom
                 anchors.left: parent.left
                 anchors.right: parent.right
@@ -194,8 +222,17 @@ Rectangle {
                 spacing: 8
                 clip: true
                 add: Transition {
-                    NumberAnimation { properties: "opacity"; from: 0; to: 1; duration: 200 }
-                    NumberAnimation { properties: "y"; from: 20; duration: 200 }
+                    NumberAnimation {
+                        properties: "opacity"
+                        from: 0
+                        to: 1
+                        duration: 200
+                    }
+                    NumberAnimation {
+                        properties: "y"
+                        from: 20
+                        duration: 200
+                    }
                 }
                 delegate: ItemDelegate {
                     width: list.width
@@ -204,51 +241,54 @@ Rectangle {
                         color: "#3F72AF"
                         radius: 10
                         border.color: "#DBE2EF"
-                }
-                contentItem: RowLayout{
-                    anchors.fill: parent
-                    anchors.leftMargin: 20
-                    anchors.rightMargin: 20
-                    spacing: 40
-                    Item {
-                        Layout.preferredWidth: 30
-                        Layout.preferredHeight: 30
+                    }
+                    contentItem: RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 20
+                        anchors.rightMargin: 20
+                        spacing: 40
+                        Item {
+                            Layout.preferredWidth: 30
+                            Layout.preferredHeight: 30
 
-                        Image {
-                            anchors.centerIn: parent
-                            width: 60
-                            height: 60
-                            fillMode: Image.PreserveAspectFit
-                            // Show images for index 0, 1, 2
-                            visible: index <= 2
-                            source: {
-                                if (index === 0) return "images/1st.png";
-                                if (index === 1) return "images/2nd.png";
-                                if (index === 2) return "images/3rd.png";
-                                return "";
+                            Image {
+                                anchors.centerIn: parent
+                                width: 60
+                                height: 60
+                                fillMode: Image.PreserveAspectFit
+                                // Show images for index 0, 1, 2
+                                visible: index <= 2
+                                source: {
+                                    if (index === 0)
+                                        return "images/1st.png";
+                                    if (index === 1)
+                                        return "images/2nd.png";
+                                    if (index === 2)
+                                        return "images/3rd.png";
+                                    return "";
+                                }
+                            }
+
+                            Text { //Rank
+                                anchors.centerIn: parent
+                                // Show number only for index 3 and above
+                                visible: index > 2
+                                text: index + 1
+                                color: "white"
+                                font.pointSize: 14
+                                font.bold: true
                             }
                         }
-
-                        Text { //Rank
-                            anchors.centerIn: parent
-                            // Show number only for index 3 and above
-                            visible: index > 2
-                            text: index + 1
-                            color: "white"
-                            font.pointSize: 14
-                            font.bold: true
-                        }
-                    }
-                        Text{ //Name
+                        Text { //Name
                             text: username
-                            color:{
-                                if(index+1==1)
-                                    return "#C9B037"
-                                if(index+1==2)
-                                    return "#D7D7D7"
-                                if(index+1==3)
-                                    return "#CE8946"
-                                return "white"
+                            color: {
+                                if (index + 1 == 1)
+                                    return "#C9B037";
+                                if (index + 1 == 2)
+                                    return "#D7D7D7";
+                                if (index + 1 == 3)
+                                    return "#CE8946";
+                                return "white";
                             }
                             font.pointSize: 14
                             font.bold: true
@@ -290,22 +330,22 @@ Rectangle {
                 }
             }
             Column {
-                    anchors.centerIn: parent
-                    visible: rect.isLoading
-                    spacing: 10
+                anchors.centerIn: parent
+                visible: rect.isLoading
+                spacing: 10
 
-                    BusyIndicator {
-                        id: loadingSpinner
-                        running: rect.isLoading
-                        anchors.horizontalCenter: parent.horizontalCenter
-                    }
+                BusyIndicator {
+                    id: loadingSpinner
+                    running: rect.isLoading
+                    anchors.horizontalCenter: parent.horizontalCenter
+                }
 
-                    Text {
-                        text: "FETCHING TOP PLAYERS..."
-                        color: "#3F72AF"
-                        font.bold: true
-                        anchors.horizontalCenter: parent.horizontalCenter
-                    }
+                Text {
+                    text: "FETCHING TOP PLAYERS..."
+                    color: "#3F72AF"
+                    font.bold: true
+                    anchors.horizontalCenter: parent.horizontalCenter
+                }
             }
         }
         //My stats area
@@ -313,11 +353,10 @@ Rectangle {
             id: statsCard
             width: 250
             height: parent.height
-            color: Qt.rgba(17/255, 45/255, 78/255, 0.5) // 50% opacity
+            color: Qt.rgba(17 / 255, 45 / 255, 78 / 255, 0.5) // 50% opacity
             radius: 20
             border.color: "#3F72AF"
             border.width: 2
-
 
             Column {
                 anchors.top: parent.top
@@ -347,8 +386,18 @@ Rectangle {
                     Column {
                         anchors.centerIn: parent
                         width: parent.width - 20 // Padding
-                        Text { text: "CURRENT RANK"; color: "#DBE2EF"; font.pointSize: 9; font.bold: true }
-                        Text { text: "#42"; color: "#C9B037"; font.pointSize: 20; font.bold: true }
+                        Text {
+                            text: "CURRENT RANK"
+                            color: "#DBE2EF"
+                            font.pointSize: 9
+                            font.bold: true
+                        }
+                        Text {
+                            text: "#42"
+                            color: "#C9B037"
+                            font.pointSize: 20
+                            font.bold: true
+                        }
                     }
                 }
 
@@ -364,8 +413,18 @@ Rectangle {
                     Column {
                         anchors.centerIn: parent
                         width: parent.width - 20
-                        Text { text: "TOTAL SCORE"; color: "#DBE2EF"; font.pointSize: 9; font.bold: true }
-                        Text { text: userxp; color: "white"; font.pointSize: 20; font.bold: true }
+                        Text {
+                            text: "TOTAL SCORE"
+                            color: "#DBE2EF"
+                            font.pointSize: 9
+                            font.bold: true
+                        }
+                        Text {
+                            text: userxp
+                            color: "white"
+                            font.pointSize: 20
+                            font.bold: true
+                        }
                     }
                 }
 
@@ -381,11 +440,25 @@ Rectangle {
                     Column {
                         anchors.centerIn: parent
                         width: parent.width - 20
-                        Text { text: "WIN STREAK"; color: "#DBE2EF"; font.pointSize: 9; font.bold: true }
+                        Text {
+                            text: "WIN STREAK"
+                            color: "#DBE2EF"
+                            font.pointSize: 9
+                            font.bold: true
+                        }
                         Row {
                             spacing: 8
-                            Text { text: userstreak; color: "white"; font.pointSize: 20; font.bold: true }
-                            Text { text: "🔥"; font.pointSize: 16; anchors.verticalCenter: parent.verticalCenter }
+                            Text {
+                                text: userstreak
+                                color: "white"
+                                font.pointSize: 20
+                                font.bold: true
+                            }
+                            Text {
+                                text: "🔥"
+                                font.pointSize: 16
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
                         }
                     }
                 }
@@ -403,7 +476,11 @@ Rectangle {
                         anchors.centerIn: parent
                         width: parent.width - 20
                         spacing: 8
-                        Text { text: "XP TO NEXT RANK"; color: "#DBE2EF"; font.pointSize: 9 }
+                        Text {
+                            text: "XP TO NEXT RANK"
+                            color: "#DBE2EF"
+                            font.pointSize: 9
+                        }
 
                         Rectangle {
                             width: parent.width
@@ -417,7 +494,6 @@ Rectangle {
                                 radius: 4
                             }
                         }
-
                     }
                 }
             }

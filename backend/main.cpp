@@ -371,6 +371,22 @@ void handle_submit_code(const http::request<http::string_body> &req, http::respo
                 pqxx::connection C(db_url);
                 pqxx::work W(C);
 
+                std::string diff_query = "SELECT difficulty FROM problems WHERE id = " + W.quote(problem_id);
+                pqxx::result diff_res = W.exec(diff_query);
+
+                // add xp for problem
+                int xp_to_add = 100;
+                if (!diff_res.empty())
+                {
+                    std::string diff = diff_res[0][0].as<std::string>();
+                    if (diff == "Easy")
+                        xp_to_add = 100;
+                    else if (diff == "Medium")
+                        xp_to_add = 200;
+                    else if (diff == "Hard")
+                        xp_to_add = 300;
+                }
+
                 std::string insertQuery =
                     "INSERT INTO user_submissions (user_id, problem_id) "
                     "SELECT id, " +
@@ -379,9 +395,28 @@ void handle_submit_code(const http::request<http::string_body> &req, http::respo
                                           "WHERE username = " +
                     W.quote(username) + " "
                                         "ON CONFLICT (user_id, problem_id) DO NOTHING;";
+                std::string update_query =
+                    "UPDATE users SET "
+                    "total_xp = total_xp + " +
+                    std::to_string(xp_to_add) + ", "
+                                                "daily_streak = CASE "
+                                                "  WHEN last_submission_date = CURRENT_DATE THEN daily_streak "
+                                                "  WHEN last_submission_date = CURRENT_DATE - INTERVAL '1 day' THEN daily_streak + 1 "
+                                                "  ELSE 1 "
+                                                "END, "
+                                                "last_submission_date = CURRENT_DATE "
+                                                "WHERE username = " +
+                    W.quote(username) + " "
+                                        "RETURNING total_xp, daily_streak;";
 
+                pqxx::result update_res = W.exec(update_query);
                 W.exec(insertQuery);
                 W.commit();
+                if (!update_res.empty())
+                {
+                    response_json["new_xp"] = update_res[0]["total_xp"].as<int>();
+                    response_json["new_streak"] = update_res[0]["daily_streak"].as<int>();
+                }
             }
 
             response_json["status"] = (exit_code == 0) ? "success" : "error";
