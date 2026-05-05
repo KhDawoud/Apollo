@@ -6,24 +6,42 @@ Rectangle {
     id: explanationPage
     color: "transparent"
 
-    property string missionName: "Unknown Mission"
+    property int problemId: 0
+    property string missionName: ""
     property string language: "Unknown"
+    property string missionDescription: ""
+    property string initialCode: ""
 
-    // this will stored as markdown from the database
-    property var pageData: [
-        {
-            title: "1. The Theory",
-            content: "# " + missionName + "\n\nBefore writing code, let's look at the underlying logic: A brute force approach might check every combination, resulting in an O(n<sup>2</sup>) time complexity. \n\n Can we do better by tracking the state as we iterate?"
-        },
-        {
-            title: "2. Relevant Techniques",
-            content: "### Fast Lookups\nBy trading space for time, we can drop our time complexity to $O(n)$.\n\n* **Step 1:** Iterate through the structure.\n* **Step 2:** Check if the required condition is already in our history.\n* **Step 3:** If not, store the current state and move on."
-        },
-        {
-            title: "3. Language Properties",
-            content: "### Using " + language + " Effectively\nMake sure to use the correct data structures native to " + language + " to ensure $O(1)$ lookup times. Avoid standard arrays for lookups if a dictionary, map, or set is available."
+    ListModel {
+        id: pageModel
+    }
+
+    Connections {
+        target: authManager
+
+        function onFetchProblemSuccess(problem) {
+            console.log("lessons length: " + problem.lessons.length);
+            missionName = problem.name;
+            missionDescription = problem.description;
+            initialCode = problem.initial_code;
+            console.log("RAW CONTENT: " + problem.lessons[0].content);
+
+            pageModel.clear();
+            for (let i = 0; i < problem.lessons.length; i++) {
+                pageModel.append({
+                    title: problem.lessons[i].title,
+                    content: problem.lessons[i].content
+                });
+            }
+            console.log("pageModel count after fill: " + pageModel.count);
         }
-    ]
+
+        function onFetchProblemFailed(error) {
+            console.log("Failed to fetch problem: " + error);
+        }
+    }
+
+    Component.onCompleted: authManager.fetchProblem(problemId)
 
     ColumnLayout {
         anchors.fill: parent
@@ -36,7 +54,9 @@ Rectangle {
             Button {
                 text: "← Back to Problems"
                 onClicked: explanationPage.StackView.view.pop()
-                background: Rectangle { color: "transparent" }
+                background: Rectangle {
+                    color: "transparent"
+                }
                 contentItem: Text {
                     text: parent.text
                     color: "#94A3B8"
@@ -45,7 +65,9 @@ Rectangle {
                 }
             }
 
-            Item { Layout.fillWidth: true }
+            Item {
+                Layout.fillWidth: true
+            }
 
             Text {
                 text: "BRIEFING: " + missionName.toUpperCase()
@@ -76,16 +98,19 @@ Rectangle {
                     clip: true
 
                     Repeater {
-                        model: explanationPage.pageData
+                        model: pageModel
 
                         delegate: Item {
+                            width: swipeView.width
+                            height: swipeView.height
+                            property string slideContent: model.content  // ← capture it here
 
                             ColumnLayout {
                                 anchors.fill: parent
                                 spacing: 16
 
                                 Text {
-                                    text: modelData.title
+                                    text: model.title
                                     color: "#60A5FA"
                                     font.pixelSize: 24
                                     font.bold: true
@@ -98,18 +123,46 @@ Rectangle {
                                     Layout.fillHeight: true
                                     clip: true
                                     ScrollBar.vertical.policy: ScrollBar.AsNeeded
-
                                     contentWidth: availableWidth
 
-                                    Text {
+                                    Column {
                                         width: textScrollView.availableWidth
+                                        spacing: 12
 
-                                        text: modelData.content
-                                        textFormat: Text.MarkdownText
-                                        color: "#D4D4D4"
-                                        font.pixelSize: 18
-                                        wrapMode: Text.WordWrap
-                                        onLinkActivated: (link) => Qt.openUrlExternally(link)
+                                        Repeater {
+                                            model: slideContent.split("```")
+
+                                            delegate: Loader {
+                                                width: parent.width
+                                                property bool isCode: index % 2 === 1
+                                                property string displayText: modelData.trim()
+                                                sourceComponent: isCode ? codeBlock : textBlock
+                                                Component.onCompleted: console.log("BLOCK " + index + " isCode=" + isCode + " text=" + displayText.substring(0, 50))
+                                            }
+                                        }
+
+                                        Component {
+                                            id: textBlock
+                                            Text {
+                                                width: parent.width
+                                                text: displayText.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>")
+                                                textFormat: Text.StyledText
+                                                color: "#D4D4D4"
+                                                font.pixelSize: 18
+                                                wrapMode: Text.WordWrap
+                                            }
+                                        }
+
+                                        Component {
+                                            id: codeBlock
+                                            CodeEditor {
+                                                width: parent.width
+                                                height: Math.max(80, displayText.split("\n").length * 24 + 32)
+                                                text: displayText
+                                                readOnly: true
+                                                fontSize: 14
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -125,7 +178,9 @@ Rectangle {
                         text: "◀ Prev"
                         enabled: swipeView.currentIndex > 0
                         onClicked: swipeView.decrementCurrentIndex()
-                        background: Rectangle { color: "transparent" }
+                        background: Rectangle {
+                            color: "transparent"
+                        }
                         contentItem: Text {
                             text: parent.text
                             color: parent.enabled ? "#94A3B8" : "#334155"
@@ -135,7 +190,7 @@ Rectangle {
 
                     PageIndicator {
                         id: indicator
-                        count: swipeView.count
+                        count: pageModel.count
                         currentIndex: swipeView.currentIndex
                         Layout.alignment: Qt.AlignHCenter
 
@@ -144,15 +199,21 @@ Rectangle {
                             height: 10
                             radius: 5
                             color: index === indicator.currentIndex ? "#60A5FA" : "#334155"
-                            Behavior on color { ColorAnimation { duration: 150 } }
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: 150
+                                }
+                            }
                         }
                     }
 
                     Button {
                         text: "Next ▶"
-                        enabled: swipeView.currentIndex < swipeView.count - 1
+                        enabled: swipeView.currentIndex < pageModel.count - 1
                         onClicked: swipeView.incrementCurrentIndex()
-                        background: Rectangle { color: "transparent" }
+                        background: Rectangle {
+                            color: "transparent"
+                        }
                         contentItem: Text {
                             text: parent.text
                             color: parent.enabled ? "#94A3B8" : "#334155"
@@ -165,7 +226,9 @@ Rectangle {
 
         RowLayout {
             Layout.fillWidth: true
-            Item { Layout.fillWidth: true }
+            Item {
+                Layout.fillWidth: true
+            }
 
             Button {
                 text: "ENTER IDE ➔"
@@ -175,7 +238,11 @@ Rectangle {
                 background: Rectangle {
                     color: parent.down ? "#047857" : (parent.hovered ? "#34D399" : "#10B981")
                     radius: 8
-                    Behavior on color { ColorAnimation { duration: 100 } }
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: 100
+                        }
+                    }
                 }
 
                 contentItem: Text {
@@ -189,9 +256,12 @@ Rectangle {
 
                 onClicked: {
                     explanationPage.StackView.view.push("MissionSolver.qml", {
-                        "missionName": explanationPage.missionName,
-                        "language": explanationPage.language
-                    })
+                        "problemId": explanationPage.problemId.toString(),
+                        "missionDescription": explanationPage.missionDescription,
+                        "initialCode": explanationPage.initialCode.replace(/\\n/g, "\n"),
+                        "language": explanationPage.language,
+                        "missionName": explanationPage.missionName
+                    });
                 }
             }
         }

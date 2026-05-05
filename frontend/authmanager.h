@@ -5,6 +5,8 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QString>
+#include <QVariant>
+#include <QJsonObject>
 
 class AuthManager : public QObject
 {
@@ -15,20 +17,33 @@ public:
     // Q_INVOKABLE makes these callable directly from QML
     Q_INVOKABLE void login(const QString &username, const QString &password);
     Q_INVOKABLE void signup(const QString &email, const QString &username, const QString &password);
+    Q_INVOKABLE void fetchProblemsList(const QString &language);
+    Q_INVOKABLE void fetchProblem(int id);
+    Q_INVOKABLE void fetchleaderboard();
 
 signals:
-    void loginSuccess(int totalXp);
+    void loginSuccess(int totalXp, int streak, QString name);
     void loginFailed(const QString &errorMessage);
 
-    void signupSuccess(int totalXp);
+    void signupSuccess(int totalXp, int streak, QString name);
     void signupFailed(const QString &errorMessage);
+    void leaderboardReceived(QVariantList leaderboardData);
+
+    void fetchProblemsListSuccess(QVariantList problems);
+    void fetchProblemsListFailed(const QString &errorMessage);
+
+    void fetchProblemSuccess(QVariantMap problem);
+    void fetchProblemFailed(const QString &errorMessage);
 
 private slots:
     void onLoginReply(QNetworkReply *reply);
     void onSignupReply(QNetworkReply *reply);
+    void onFetchProblemsList(QNetworkReply *reply);
+    void onFetchProblem(QNetworkReply *reply);
 
 private:
     QNetworkAccessManager *networkManager;
+    QString currentUsername;
 };
 
 #endif // AUTHMANAGER_H

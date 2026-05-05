@@ -2,9 +2,9 @@
 #include "utils.hpp"
 #include <QNetworkRequest>
 #include <QUrl>
-#include <QJsonObject>
 #include <QJsonDocument>
 #include <QByteArray>
+#include <QJsonArray>
 
 AuthManager::AuthManager(QObject *parent) : QObject(parent)
 {
@@ -16,6 +16,36 @@ void AuthManager::login(const QString &username, const QString &password)
     QUrl url("http://localhost:8080/api/login");
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    bool isemail = username.contains('@'); // checks if it is an email or a username
+
+    if (isemail)
+    {
+        // checks if email is in correct format
+        try
+        {
+            checkemail(username.toStdString());
+        }
+        catch (const std::invalid_argument &e)
+        {
+            emit loginFailed("Invalid email format. Please check your email address.");
+            return;
+        }
+    }
+    else
+    {
+        // Username length check
+        if (username.length() < 4)
+        {
+            emit loginFailed("Username must be at least 4 characters long.");
+            return;
+        }
+    }
+    // Password length check
+    if (password.length() < 8)
+    {
+        emit loginFailed("Password must be at least 8 characters long.");
+        return;
+    }
 
     QJsonObject json;
     json["identifier"] = username;
@@ -23,7 +53,6 @@ void AuthManager::login(const QString &username, const QString &password)
     QJsonDocument doc(json);
 
     QNetworkReply *reply = networkManager->post(request, doc.toJson());
-
     connect(reply, &QNetworkReply::finished, this, [this, reply]()
             { onLoginReply(reply); });
 }
@@ -39,16 +68,22 @@ void AuthManager::onLoginReply(QNetworkReply *reply)
         if (jsonObj["status"].toString() == "success")
         {
             int xp = jsonObj["total_xp"].toInt();
-            emit loginSuccess(xp);
-        }
-        else
-        {
-            emit loginFailed(jsonObj["message"].toString());
+            int streak = jsonObj["daily_streak"].toInt();
+            QString name = jsonObj["username"].toString();
+            currentUsername = name;
+            emit loginSuccess(xp, streak, name);
         }
     }
     else
     {
-        emit loginFailed("Network error: Cannot connect to server.");
+        if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 401)
+        {
+            emit loginFailed("Account does not exist. Invalid username/email or password.");
+        }
+        else
+        {
+            emit loginFailed("Network error: Cannot connect to server.");
+        }
     }
     reply->deleteLater();
 }
@@ -59,22 +94,27 @@ void AuthManager::signup(const QString &email, const QString &username, const QS
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
-    // Email validity check 
-    try{
+    // Email validity check
+    try
+    {
         checkemail(email.toStdString());
-    }catch(const std::invalid_argument& e){
+    }
+    catch (const std::invalid_argument &e)
+    {
         emit signupFailed("Invalid email format. Please check your email address.");
         return;
     }
 
-    //Username length check
-    if (username.length() < 4) {
+    // Username length check
+    if (username.length() < 4)
+    {
         emit signupFailed("Username must be at least 4 characters long.");
         return;
     }
 
     // Password length check
-    if (password.length() < 8) {
+    if (password.length() < 8)
+    {
         emit signupFailed("Password must be at least 8 characters long.");
         return;
     }
@@ -101,7 +141,9 @@ void AuthManager::onSignupReply(QNetworkReply *reply)
         if (jsonObj["status"].toString() == "success")
         {
             int xp = jsonObj["total_xp"].toInt();
-            emit signupSuccess(xp);
+            int streak = jsonObj["daily_streak"].toInt();
+            QString name = jsonObj["username"].toString();
+            emit signupSuccess(xp, streak, name);
         }
         else
         {
@@ -110,7 +152,112 @@ void AuthManager::onSignupReply(QNetworkReply *reply)
     }
     else
     {
-        emit signupFailed("Network error: Cannot connect to server.");
+        if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 409)
+        {
+            emit signupFailed("Username or Email already exists.");
+        }
+        else
+        {
+            emit signupFailed("Network error: Cannot connect to server.");
+        }
     }
     reply->deleteLater();
+}
+
+void AuthManager::fetchProblemsList(const QString &language)
+{
+
+    QUrl url(
+        "http://localhost:8080/api/problems?language=" +
+        language +
+        "&username=" +
+        currentUsername);
+
+    QNetworkRequest request(url);
+
+    QNetworkReply *reply = networkManager->get(request);
+
+    connect(reply, &QNetworkReply::finished,
+            this,
+            [this, reply]()
+            {
+                onFetchProblemsList(reply);
+            });
+}
+
+void AuthManager::onFetchProblemsList(QNetworkReply *reply)
+{
+    if (reply->error() == QNetworkReply::NoError)
+    {
+        QByteArray response = reply->readAll();
+        QJsonDocument jsonDoc = QJsonDocument::fromJson(response);
+        QJsonArray jsonArray = jsonDoc.array();
+
+        QVariantList problemslist;
+        for (const QJsonValue &val : jsonArray)
+        {
+            problemslist.append(val.toObject().toVariantMap());
+        }
+
+        emit fetchProblemsListSuccess(problemslist);
+    }
+    else
+    {
+        emit fetchProblemsListFailed("Network error: Cannot connect to server.");
+    }
+    reply->deleteLater();
+}
+
+void AuthManager::fetchProblem(int id)
+{
+    QUrl url("http://localhost:8080/api/problem?id=" + QString::number(id));
+    QNetworkRequest request(url);
+
+    QNetworkReply *reply = networkManager->get(request);
+    connect(reply, &QNetworkReply::finished, this, [this, reply]()
+            { onFetchProblem(reply); });
+}
+
+void AuthManager::onFetchProblem(QNetworkReply *reply)
+{
+    if (reply->error() == QNetworkReply::NoError)
+    {
+        QByteArray response = reply->readAll();
+        QJsonDocument jsonDoc = QJsonDocument::fromJson(response);
+        QVariantMap problem = jsonDoc.object().toVariantMap();
+
+        emit fetchProblemSuccess(problem);
+    }
+    else
+    {
+        emit fetchProblemFailed("Network error: Cannot connect to server.");
+    }
+    reply->deleteLater();
+}
+
+void AuthManager::fetchleaderboard()
+{
+
+    QNetworkRequest request(QUrl("http://localhost:8080/api/leaderboard"));
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    QNetworkReply *reply = networkManager->get(request);
+
+    connect(reply, &QNetworkReply::finished, this, [=]()
+            {
+        if (reply->error() == QNetworkReply::NoError) {
+            QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
+            QJsonObject obj = doc.object();
+
+            QJsonArray jsonArray = obj["leaderboard"].toArray();
+            QVariantList leaderboardList;
+            for (const QJsonValue &value : jsonArray) {
+                leaderboardList.append(value.toVariant());
+            }
+
+            emit leaderboardReceived(leaderboardList);
+        } else {
+            qDebug() << "Network Error (Leaderboard):" << reply->errorString();
+        }
+        reply->deleteLater(); });
 }

@@ -1,3 +1,4 @@
+//Login
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -5,6 +6,8 @@ import QtQuick.Layouts
 Rectangle {
     id: loginPage
     color: "transparent"
+    property string currentError: ""
+    property bool isProcessing: false
 
     Rectangle {
         id: loginRoot
@@ -14,10 +17,12 @@ Rectangle {
         Connections {
             target: authManager
 
-            function onLoginSuccess(totalXp) {
+            function onLoginSuccess(totalXp,streak,name) {
                 console.log("Logged in! User XP: " + totalXp);
-                loginBtn.enabled = true;
-                loginBtn.text = "LOGIN";
+                isProcessing = false;
+                userxp = totalXp;
+                userstreak = streak;
+                username = name;
 
                 isLoggedIn = true;
                 mainNavBar.currentIndex = 0; // sends you home after logging you in
@@ -25,10 +30,9 @@ Rectangle {
 
             function onLoginFailed(errorMessage) {
                 console.log("Login Failed: " + errorMessage);
-                loginBtn.enabled = true;
-                loginBtn.text = "LOGIN";
+                isProcessing =false;
 
-                // need to show this error next
+                currentError=errorMessage;
             }
         }
         //back button to be able to traverse back to home as the tabbar is not shown
@@ -85,7 +89,7 @@ Rectangle {
                     Layout.bottomMargin: 10
                 }
 
-                // Username Input
+                // Username or Email Input
                 ColumnLayout {
                     spacing: 8
                     Layout.fillWidth: true
@@ -112,6 +116,18 @@ Rectangle {
                             border.width: 1
                         }
                     }
+                }
+                //Error message if email or username is invalid
+                Text {
+                    id: usererror
+                    text: currentError.toLowerCase().includes("email format") || currentError.toLowerCase().includes("username must") ? currentError : ""
+                    color: "#FF4C4C"
+                    font.pointSize: 10
+                    font.bold: true
+                    wrapMode: Text.WordWrap
+                    Layout.fillWidth: true
+                    horizontalAlignment: Text.AlignHCenter
+                    visible: text !== ""
                 }
 
                 // Password Input
@@ -143,11 +159,34 @@ Rectangle {
                         }
                     }
                 }
+                //Error message if email or username is invalid
+                Text {
+                    id: passworderror
+                    text: currentError.toLowerCase().includes("password must") ? currentError : ""
+                    color: "#FF4C4C"
+                    font.pointSize: 10
+                    font.bold: true
+                    wrapMode: Text.WordWrap
+                    Layout.fillWidth: true
+                    horizontalAlignment: Text.AlignHCenter
+                    visible: text !== ""
+                }
+                Text {
+                    id: accounterror
+                    text: currentError.toLowerCase().includes("account does") ? currentError : ""
+                    color: "#FF4C4C"
+                    font.pointSize: 10
+                    font.bold: true
+                    wrapMode: Text.WordWrap
+                    Layout.fillWidth: true
+                    horizontalAlignment: Text.AlignHCenter
+                    visible: text !== ""
+                }
 
                 // Login Button
                 Button {
                     id: loginBtn
-                    text: "LOGIN"
+                    text: isProcessing? "LOGGING IN..." : "LOGIN"
                     Layout.fillWidth: true
                     Layout.preferredHeight: 55
                     Layout.topMargin: 15
@@ -171,10 +210,11 @@ Rectangle {
                             }
                         }
                     }
+                    enabled: !isProcessing && userField.text !== "" && passField.text !== ""
 
                     onClicked: {
-                        loginBtn.enabled = false;
-                        loginBtn.text = "LOGGING IN...";
+                        isProcessing = true;
+                        currentError = "";
                         authManager.login(userField.text, passField.text);
                     }
                 }

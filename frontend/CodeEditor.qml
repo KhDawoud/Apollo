@@ -1,3 +1,4 @@
+//Code Editor
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -20,6 +21,7 @@ Rectangle {
     property alias textDocument: editor.textDocument
     property int fontSize: 15
     property string fontColor: "#D4D4D4"
+    property bool readOnly: false
 
     RowLayout {
         anchors.fill: parent
@@ -73,6 +75,7 @@ Rectangle {
 
             TextArea {
                 id: editor
+                readOnly: root.readOnly
                 color: root.fontColor
                 font.family: "monospace"
                 font.pixelSize: root.fontSize
